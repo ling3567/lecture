@@ -969,7 +969,11 @@
         <input id="login-pass" class="form-input" type="password" autocomplete="current-password" />
       </div>
       <div class="form-error" id="login-error"></div>
-      <div class="form-hint">提醒：此為前端認證，僅用於避免一般訪客誤改資料。若有更嚴格的權限需求，建議搭配後端服務。</div>
+      <div class="form-hint">
+        密碼以 SHA-256 雜湊方式儲存於原始碼。前端認證僅用於避免一般訪客誤改資料；
+        嚴格的權限管理請改用後端服務。
+        <br><button type="button" class="admin-link" id="btn-gen-hash" style="margin-left:0;margin-top:6px">🔑 產生新密碼雜湊</button>
+      </div>
     </form>
     <div class="modal-foot">
       <button class="btn-form btn-form-secondary" data-close="login-modal">取消</button>
@@ -1806,15 +1810,35 @@ document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeLight
 
 /* =========================================================
  * 管理者後台
- * ── 修改帳號密碼請編輯下方 ADMIN_CONFIG ──
- * 注意：前端認證僅供「避免一般訪客誤改」，並非真正的安全機制。
- *       任何能讀到此 HTML 原始碼的人都看得到密碼。
- *       若需嚴格權限管理，請改用後端服務 + cookies/session。
+ * ─────────────────────────────────────────────
+ * 帳號 / 密碼設定方式：
+ *   ADMIN_CONFIG.username   = 帳號 (明文)
+ *   ADMIN_CONFIG.passwordHash = 密碼的 SHA-256 雜湊 (64 字元 hex)
+ *
+ * 預設帳密：admin / chimei2026
+ *
+ * ▼ 變更密碼步驟：
+ *   1. 用管理者帳號登入網頁
+ *   2. 在登入視窗點「產生新密碼雜湊」工具
+ *   3. 輸入新密碼，複製產生出的 SHA-256 雜湊字串
+ *   4. 用編輯器打開 index.html，將下方 passwordHash 改為新雜湊
+ *   5. commit & push 即生效
+ *
+ * 注意：前端認證僅供「避免一般訪客誤改」。原始碼裡的雜湊雖然
+ *       看不到原始密碼，但仍可被字典攻擊。請選用強密碼。
+ *       嚴格的權限管理請改用後端服務 + session/cookie。
  * ========================================================= */
 const ADMIN_CONFIG = {
   username: "admin",
-  password: "chimei2026"
+  // SHA-256("chimei2026")
+  passwordHash: "da4c31ae5a3b30d9774a2c2eafac5d725d25abe4e18f6e35bc452d428ea3618c"
 };
+
+async function sha256Hex(text) {
+  const buf = new TextEncoder().encode(text);
+  const hash = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
 
 const ADMIN_TAG_GROUPS = [
   { label: "繼續教育學分", tags: ["專業","品質","倫理","性別"] },
@@ -1839,12 +1863,14 @@ $("btn-admin-login").addEventListener("click", () => {
 $("btn-login-submit").addEventListener("click", attemptLogin);
 $("login-form").addEventListener("submit", attemptLogin);
 $("login-pass").addEventListener("keydown", (e) => { if (e.key === "Enter") attemptLogin(e); });
+$("btn-gen-hash").addEventListener("click", genPasswordHash);
 
-function attemptLogin(e) {
+async function attemptLogin(e) {
   if (e && e.preventDefault) e.preventDefault();
   const u = $("login-user").value.trim();
   const p = $("login-pass").value;
-  if (u === ADMIN_CONFIG.username && p === ADMIN_CONFIG.password) {
+  const hash = await sha256Hex(p);
+  if (u === ADMIN_CONFIG.username && hash === ADMIN_CONFIG.passwordHash) {
     isAdmin = true;
     document.body.classList.add("admin-mode");
     $("admin-toolbar").classList.add("show");
@@ -1857,6 +1883,23 @@ function attemptLogin(e) {
   } else {
     $("login-error").textContent = "❌ 帳號或密碼錯誤";
     $("login-pass").value = "";
+  }
+}
+
+// 產生新密碼雜湊小工具
+async function genPasswordHash() {
+  const pw = prompt("請輸入新密碼\n（不會儲存，僅用來計算 SHA-256 雜湊）");
+  if (!pw) return;
+  if (pw.length < 4) { alert("密碼至少 4 個字元"); return; }
+  const hash = await sha256Hex(pw);
+  try {
+    await navigator.clipboard.writeText(hash);
+    alert(`新密碼的 SHA-256 雜湊（已複製到剪貼簿）：\n\n${hash}\n\n` +
+          `請打開 index.html，找到 ADMIN_CONFIG 區塊，\n` +
+          `將 passwordHash 的值換成這串雜湊，\n` +
+          `commit 後新密碼即生效。`);
+  } catch (e) {
+    prompt("新密碼的 SHA-256 雜湊（請手動複製）：", hash);
   }
 }
 
