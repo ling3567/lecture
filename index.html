@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>全院教學活動時間表</title>
+<title>奇美醫院 全院演講</title>
+<link rel="icon" type="image/png" href="logo.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
@@ -62,12 +63,25 @@
     border-radius: 50%;
   }
   .header-content { position: relative; z-index: 1; }
+  .brand-row {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 18px;
+  }
+  .brand-logo {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: #fff;
+    padding: 6px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+    object-fit: contain;
+    flex-shrink: 0;
+  }
   .header-badge {
     display: inline-block; background: rgba(255,255,255,0.15);
     backdrop-filter: blur(10px);
     padding: 6px 16px; border-radius: 20px;
     font-size: 13px; font-weight: 500;
-    margin-bottom: 16px; letter-spacing: 0.5px;
+    letter-spacing: 0.5px;
   }
   h1 {
     font-size: clamp(26px, 4vw, 40px); font-weight: 900;
@@ -606,9 +620,12 @@
 
 <header>
   <div class="container header-content">
-    <span class="header-badge">📚 醫學教育中心</span>
-    <h1 id="page-title">全院教學活動時間表</h1>
-    <p class="subtitle">Annual Hospital-Wide Teaching Programs</p>
+    <div class="brand-row">
+      <img src="logo.png" alt="奇美醫院 教學部" class="brand-logo" />
+      <span class="header-badge">奇美醫院 · 教學部</span>
+    </div>
+    <h1 id="page-title">奇美醫院 全院演講</h1>
+    <p class="subtitle" id="page-subtitle">Hospital-Wide Lecture Series</p>
     <div class="meta-row">
       <div class="meta-item">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -739,7 +756,7 @@
 
 <footer>
   <div class="container">
-    <p>奇美醫療財團法人奇美醫院 醫學教育中心 · 全院教學活動公告</p>
+    <p>奇美醫療財團法人奇美醫院 教學部 · 全院演講公告</p>
   </div>
 </footer>
 
@@ -901,7 +918,7 @@ function renderYearTabs() {
 
 function selectYear(y) {
   currentYear = y;
-  $("page-title").textContent = `${y} 年 全院教學活動時間表`;
+  $("page-subtitle").textContent = `${y} 年度 · Hospital-Wide Lecture Series`;
   $("meta-updated").textContent = `更新日期：${SCHEDULE[y].updated}`;
   document.querySelectorAll(".year-tab").forEach(b => {
     b.classList.toggle("active", Number(b.dataset.year) === y);
