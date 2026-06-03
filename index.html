@@ -931,6 +931,13 @@
   <div id="year-placeholder" class="year-placeholder" style="display:none">
     <h3 id="placeholder-title">本年度尚未公告</h3>
     <p id="placeholder-text">課程資訊將陸續公布，敬請期待。</p>
+    <button class="btn-form btn-form-primary" id="btn-autogen" style="display:none; margin-top:16px">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+      自動產出本年度預設排程
+    </button>
+    <div class="form-hint" id="autogen-hint" style="display:none; margin-top:8px">
+      依規則：每月「第一個星期五、第二個星期三、第三個星期二」自動建立 36 個待公告場次，可再逐場編輯。
+    </div>
   </div>
   <div id="empty" class="empty-state" style="display:none">
     <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -1218,6 +1225,11 @@ const SCHEDULE = {
       { date:"12/17", weekday:"三", topic:"跨越預後困境：從美國經驗看神經膠質母細胞瘤 (GBM) 治療的新策略", speaker:"Clark C. Chen, MD, PhD（布朗大學 神經外科）", host:"陳志偉主任", tags:["專業","生理","CFD 一般"], details:["醫師、專師繼續教育「專業」學分 1.2 分","臨床教師認證 A 類 a「生理」1 學分","CFD 一般課程 5 點","科部外教學績效積分"] }
     ]
   },
+  116: { adYear: 2027, updated: "尚未公告", location: "第五醫療大樓五樓國際會議廳", timeStart: "07:30", timeEnd: "08:30", courses: [] },
+  117: { adYear: 2028, updated: "尚未公告", location: "第五醫療大樓五樓國際會議廳", timeStart: "07:30", timeEnd: "08:30", courses: [] },
+  118: { adYear: 2029, updated: "尚未公告", location: "第五醫療大樓五樓國際會議廳", timeStart: "07:30", timeEnd: "08:30", courses: [] },
+  119: { adYear: 2030, updated: "尚未公告", location: "第五醫療大樓五樓國際會議廳", timeStart: "07:30", timeEnd: "08:30", courses: [] },
+  120: { adYear: 2031, updated: "尚未公告", location: "第五醫療大樓五樓國際會議廳", timeStart: "07:30", timeEnd: "08:30", courses: [] },
   /* ───── 新年度上線方式 ─────
    * 當 116 / 117 年度課程確認後，在這裡加入：
    *   116: { adYear: 2027, updated: "116.MM.DD", location: "第五醫療大樓五樓國際會議廳",
@@ -1413,6 +1425,8 @@ function renderSpotlight() {
 
   const cardsEl = $("spotlight-cards");
   if (upcoming.length === 0) {
+    // 未來年度且尚無公開課程 → 隱藏 spotlight (placeholder 會提示「尚未公告」)
+    if (yr.adYear > TODAY_AD_YEAR) { spotlight.style.display = "none"; return; }
     $("spotlight-meta").innerHTML = `近 ${SPOTLIGHT_DAYS} 天內無排定課程`;
     cardsEl.innerHTML = '<div class="spotlight-empty">本年度即將到來的演講已全部結束，或下一場仍在規劃中。</div>';
     spotlight.style.display = "block";
@@ -1580,6 +1594,8 @@ function buildCard(c, idx) {
 }
 
 function matches(c) {
+  // 自動產出的骨架場次 (尚未編輯內容) 僅在管理者模式顯示
+  if (c._skeleton && !isAdmin) return false;
   if (filters.hide.checked && c.status) return false;
   const month = filters.month.value;
   if (month && parseInt(c.date.split("/")[0], 10) !== parseInt(month, 10)) return false;
@@ -1599,7 +1615,10 @@ function matches(c) {
 let filteredCache = [];
 function render() {
   const yr = SCHEDULE[currentYear];
-  const hasData = yr.courses && yr.courses.length > 0;
+  // 公開頁：若該年度只剩 skeleton 也視為「尚未公告」，避免畫面被空殼塞滿
+  const hasData = isAdmin
+    ? (yr.courses && yr.courses.length > 0)
+    : (yr.courses && yr.courses.some(c => !c._skeleton));
 
   renderSpotlight();
 
@@ -1610,8 +1629,12 @@ function render() {
     filterCard.style.display = "none";
     $("placeholder-title").textContent = `${currentYear} 年度尚未公告`;
     $("placeholder-text").textContent = `${yr.adYear} 年度課程資訊將於後續公布，敬請期待。`;
+    $("btn-autogen").style.display = isAdmin ? "inline-flex" : "none";
+    $("autogen-hint").style.display = isAdmin ? "block" : "none";
     return;
   }
+  $("btn-autogen").style.display = "none";
+  $("autogen-hint").style.display = "none";
 
   placeholderEl.style.display = "none";
   filterCard.style.display = "block";
@@ -2074,6 +2097,11 @@ function saveCourseEdit() {
       course._previewPoster = old._previewPoster;
     }
   }
+  // 若原本是「自動產出骨架」且這次仍沒填入主題，保留骨架標記 (不對公開頁面顯示)
+  if (!editCtx.isNew) {
+    const old = SCHEDULE[editCtx.year].courses[editCtx.idx];
+    if (old?._skeleton && !course.topic) course._skeleton = true;
+  }
 
   if (!SCHEDULE[year]) {
     SCHEDULE[year] = {
@@ -2203,6 +2231,116 @@ function courseToLine(c) {
   }
   return `{ ${parts.join(", ")} }`;
 }
+
+/* =========================================================
+ * 學分明細 → 自動勾選對應學分類別
+ * ========================================================= */
+const KNOWN_TAGS_SET = new Set([
+  "專業","品質","倫理","性別",
+  "生理","健康促進","疾病預防","心理","醫學人文","敘事醫學",
+  "安寧","社會、長照","長照","六大核心","進階","教學技巧","數位賦能","倫理及法律",
+  "CFD 核心","CFD 一般",
+  "醫學倫理","全人醫療","醫療品質","緩和醫療","健康識能","醫療相關法規",
+  "資訊安全","病人權利","危機管理","品質管理",
+  "領導統御","行政管理與危機處理"
+]);
+
+function detectTagsFromDetails(text) {
+  const found = new Set();
+  if (!text) return found;
+  // 抓所有「」與『』 內文字
+  const bracketRe = /[「『]([^」』]+)[」』]/g;
+  let m;
+  while ((m = bracketRe.exec(text)) !== null) {
+    const inner = m[1].trim();
+    if (KNOWN_TAGS_SET.has(inner)) found.add(inner);
+    if (inner === "六大核心能力") found.add("六大核心");
+    if (inner === "倫理-性別")    { found.add("性別"); found.add("倫理"); }
+    if (inner === "倫理與法律")   found.add("倫理及法律");
+    if (inner === "數位賦能教學" || inner === "數位賦能教學技巧") found.add("數位賦能");
+  }
+  // 「臨床教師認證」行內的分類縮寫
+  for (const line of text.split(/\r?\n/)) {
+    if (!line.includes("臨床教師認證")) continue;
+    if (/B\s*類/.test(line))                  found.add("六大核心");
+    if (/D\s*類/.test(line))                  found.add("倫理及法律");
+    if (/Aa\s*類|A\s*類\s*a/.test(line))      found.add("生理");
+  }
+  // CFD 點數
+  if (/CFD\s*核心/.test(text))  found.add("CFD 核心");
+  if (/CFD\s*一般/.test(text))  found.add("CFD 一般");
+  return found;
+}
+
+// 學分明細 textarea 變動 → debounce 後自動勾選 (不取消使用者既有勾選)
+let _detailsDebounce = null;
+$("ed-details").addEventListener("input", () => {
+  clearTimeout(_detailsDebounce);
+  _detailsDebounce = setTimeout(() => applyAutoTagDetect(), 350);
+});
+$("ed-details").addEventListener("blur", () => applyAutoTagDetect());
+
+function applyAutoTagDetect() {
+  const detected = detectTagsFromDetails($("ed-details").value);
+  if (detected.size === 0) return;
+  let addedCount = 0;
+  $("ed-tags").querySelectorAll("input").forEach(cb => {
+    if (detected.has(cb.value) && !cb.checked) {
+      cb.checked = true;
+      cb.closest(".tag-cb").classList.add("on");
+      addedCount++;
+    }
+  });
+  if (addedCount > 0) {
+    // 細微提示，不彈 toast (避免每次打字都跳出)
+  }
+}
+
+/* =========================================================
+ * 自動產出年度排程
+ * 規則：每月「第一個星期五」「第二個星期三」「第三個星期二」共 3 場 × 12 月 = 36 場
+ * ========================================================= */
+function nthWeekdayOfMonth(adYear, month, weekday, n) {
+  // weekday: 0=Sun, 1=Mon, ..., 6=Sat
+  const first = new Date(adYear, month - 1, 1);
+  const offset = (weekday - first.getDay() + 7) % 7;
+  return 1 + offset + (n - 1) * 7;
+}
+
+function generateDefaultSchedule(twYear) {
+  const adYear = SCHEDULE[twYear]?.adYear || (1911 + Number(twYear));
+  const out = [];
+  const wkChar = "日一二三四五六";
+  const rules = [
+    { weekday: 5, nth: 1, label: "五" }, // 第一個星期五
+    { weekday: 3, nth: 2, label: "三" }, // 第二個星期三
+    { weekday: 2, nth: 3, label: "二" }  // 第三個星期二
+  ];
+  for (let m = 1; m <= 12; m++) {
+    for (const r of rules) {
+      const d = nthWeekdayOfMonth(adYear, m, r.weekday, r.nth);
+      // 防呆：確保 d 在當月有效（理論上 1~21 必合法）
+      if (d < 1 || d > 31) continue;
+      out.push({ date: `${m}/${d.toString().padStart(2,'0')}`, weekday: r.label, status: "tba", _skeleton: true });
+    }
+  }
+  out.sort(courseDateCompare);
+  return out;
+}
+
+$("btn-autogen").addEventListener("click", () => {
+  if (!isAdmin) return;
+  if (!confirm(`即將為 ${currentYear} 年度 (${SCHEDULE[currentYear].adYear}) 自動產出 36 個預設場次，確定執行？\n\n您稍後可逐場編輯主題、講師等資訊。`)) return;
+  SCHEDULE[currentYear].courses = generateDefaultSchedule(currentYear);
+  if (!SCHEDULE[currentYear].updated || SCHEDULE[currentYear].updated === "尚未公告") {
+    const now = new Date();
+    SCHEDULE[currentYear].updated = `${now.getFullYear()-1911}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+  }
+  $("meta-updated").textContent = `更新日期：${SCHEDULE[currentYear].updated}`;
+  render();
+  renderYearTabs();
+  showToast(`✓ 已產出 36 個待公告場次，可開始編輯`);
+});
 
 /* =========================================================
  * 啟動
