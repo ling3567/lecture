@@ -120,6 +120,7 @@
   }
   .year-tab.active .pill { background: var(--primary-light); color: var(--primary-dark); }
   .year-tab.tba { opacity: 0.7; }
+  .year-tab.past:not(.active) { opacity: 0.75; }
 
   /* Spotlight */
   .spotlight {
@@ -695,9 +696,15 @@
           <option value="進階">CFD 進階</option>
           <option value="生理">CFD Aa類生理</option>
           <option value="健康促進">CFD Ab類健康促進</option>
+          <option value="疾病預防">CFD Ab類疾病預防</option>
+          <option value="心理">CFD Ab類心理</option>
           <option value="醫學人文">CFD Ac類醫學人文</option>
+          <option value="敘事醫學">CFD Ac類敘事醫學</option>
           <option value="安寧">CFD Ad類安寧</option>
           <option value="社會、長照">CFD Ad類社會長照</option>
+          <option value="長照">CFD Ad類長照</option>
+          <option value="教學技巧">CFD C類教學技巧</option>
+          <option value="數位賦能">CFD C類數位賦能</option>
           <option value="倫理及法律">CFD D類倫理及法律</option>
           <option value="CFD 核心">CFD 核心課程（點數）</option>
           <option value="CFD 一般">CFD 一般課程（點數）</option>
@@ -707,7 +714,12 @@
           <option value="緩和醫療">員工 — 緩和醫療</option>
           <option value="健康識能">員工 — 健康識能</option>
           <option value="醫療相關法規">員工 — 醫療相關法規</option>
+          <option value="資訊安全">員工 — 資訊安全</option>
+          <option value="病人權利">員工 — 病人權利</option>
+          <option value="危機管理">員工 — 危機管理</option>
+          <option value="品質管理">員工 — 品質管理</option>
           <option value="領導統御">主管培育 — 領導統御</option>
+          <option value="行政管理與危機處理">主管培育 — 行政管理與危機處理</option>
         </select>
       </div>
     </div>
@@ -818,6 +830,60 @@ const SCHEDULE = {
       { date:"12/15", weekday:"二", topic:"末期病人善終照護個案討論會", speaker:"兒科部", host:"", tags:["倫理","生理","安寧","CFD 核心","緩和醫療"], details:["醫師、專科護理師繼續教育「倫理」學分 1.2 分","臨床教師認證 A 類 a「生理」、A 類 d「安寧」各 1 學分","CFD 核心課程 10 點、科部外教學績效積分","員工教育訓練「緩和醫療」1 學分"] }
     ]
   },
+  114: {
+    adYear: 2025,
+    updated: "114.12.15",
+    location: "第五醫療大樓五樓國際會議廳",
+    timeStart: "07:30",
+    timeEnd: "08:30",
+    courses: [
+      { date:"1/07", weekday:"二", topic:"Acute Hospital Care at Home: Opportunities and Challenges in Delivering Human-Centered, Integrated Care to Patients' Homes", speaker:"高承楷醫師（美國芝加哥大學）", host:"黃建程主任", tags:["品質","醫學人文","CFD 核心"], details:["臨床教師認證 A 類 c「醫學人文」1 學分","CFD 核心課程 10 點","醫師及專師「品質」繼續教育學分 1.2 分","科部外教學績效積分"] },
+      { date:"1/15", weekday:"三", topic:"蛋白質譜技術：臨床實驗室中新興工具", speaker:"陳玉如所長（中央研究院 化學研究所）", host:"馮意哲主任", tags:["品質","專業","生理","六大核心","CFD 核心"], details:["臨床教師認證 A 類 a「生理」、B 類「六大核心」各 1 學分","CFD 核心課程 10 點","醫師「品質」及專師「專業」繼續教育學分 1.2 分","科部外教學績效積分"] },
+      { date:"1/24", weekday:"五", topic:"教學醫院科研衍生新創計畫的申請與科研創業輔導經驗分享", speaker:"陳炳煇教授（台灣大學機械工程學系）", host:"陳志成副院長", timeStart:"16:00", timeEnd:"17:00", note:"本場次特殊時間：16:00–17:00", tags:["品質","六大核心","進階","CFD 核心"], details:["臨床教師認證 B 類「六大核心」、「進階」各 1 學分","CFD 核心課程 10 點","醫師及專師「品質」繼續教育學分 1.2 分","科部外教學績效積分"] },
+      { date:"2/07", weekday:"五", topic:"USFDA 推薦的半乳糖單點新法 (GSP)-POC 快速精準定量肝功能及應用", speaker:"胡幼圃教授（台北醫學大學藥學院）", host:"蘇慧真部長", tags:["品質","專業","生理","六大核心","CFD 核心"], details:["臨床教師認證 A 類 a「生理」、B 類「六大核心」各 1 學分","CFD 核心課程 10 點","醫師「品質」及專師「專業」繼續教育學分 1.2 分","科部外教學績效積分"] },
+      { date:"2/12", weekday:"三", topic:"從細胞治療到胞器治療", speaker:"周德陽院長（中國醫藥大學附設醫院）", host:"陳志成副院長", tags:["品質","專業","生理","六大核心","CFD 核心"], details:["臨床教師認證 A 類 a「生理」、B 類「六大核心」各 1 學分","CFD 核心課程 10 點","醫師「品質」及專師「專業」繼續教育學分 1.2 分","科部外教學績效積分"] },
+      { date:"2/18", weekday:"二", topic:"The trend of anti-cancer drug development, three-body (三體): target, drug, biomarker", speaker:"查岱龍教授（國衞院癌研所所長／台灣泌尿科醫學會理事長）", host:"黃冠華副部長", tags:["專業","生理","六大核心","CFD 核心"], details:["臨床教師認證 A 類 a「生理」、B 類「六大核心」各 1 學分","CFD 核心課程 10 點","醫師及專師「專業」繼續教育學分 1.2 分","科部外教學績效積分"] },
+      { date:"3/07", weekday:"五", topic:"Revolution in Cardiac-Kidney-Metabolic syndrome in the recent decade", speaker:"江晨恩教授（台北榮民總醫院 心臟內科）", host:"施志遠主任", tags:["品質","疾病預防","CFD 核心","全人醫療"], details:["臨床教師認證 A 類 b「疾病預防」1 學分","CFD 核心課程 10 點","醫師及專師「品質」繼續教育學分 1.2 分","科部外教學績效積分","員工教育訓練「全人醫療」1 學分"] },
+      { date:"3/12", weekday:"三", topic:"改變生命的使命 A Mission to Transform Lives", speaker:"卓青峰院長（迦南中醫診所）", host:"張榮哲主任", tags:["倫理","醫學人文","CFD 核心","全人醫療"], details:["臨床教師認證 A 類 c「醫學人文」1 學分","CFD 核心課程 10 點","醫師及專師「倫理」繼續教育學分 1.2 分","科部外教學績效積分","員工教育訓練「全人醫療」1 學分"] },
+      { date:"3/21", weekday:"五", topic:"善用每一滴熱血：別讓愛心成為浪費，一起成為捐血率世界第一的守護者！", speaker:"何國維醫師（高雄捐血中心秘書兼台南捐血站負責醫師）", host:"陳志金主任", tags:["品質","倫理","倫理及法律","CFD 核心","全人醫療"], details:["臨床教師認證 D 類「倫理及法律」1 學分","CFD 核心課程 10 點","醫師「品質」及專師「倫理」繼續教育學分 1.2 分","科部外教學績效積分","員工教育訓練「全人醫療」1 學分"] },
+      { date:"3/28", weekday:"五", topic:"健康老化研究、生醫資料科學在預防醫學之應用", speaker:"熊昭教授（國衛院群體健康研究所 名譽研究員）", host:"李健逢部長", tags:["品質","健康促進","長照","CFD 核心","全人醫療"], details:["臨床教師認證 A 類 b「健康促進」、A 類 d「長照」各 1 學分","CFD 核心課程 10 點","醫師及專師「品質」繼續教育學分 1.2 分","科部外教學績效積分","員工教育訓練「全人醫療」1 學分"] },
+      { date:"4/04", weekday:"五", status:"holiday", note:"適逢清明節暫停乙次" },
+      { date:"4/09", weekday:"三", topic:"末期病人善終照護個案討論會", speaker:"心臟內科 徐瑋醫師／施志遠主任", host:"謝宛婷主任", tags:["倫理","生理","安寧","CFD 核心","緩和醫療"], details:["醫師、專科護理師繼續教育「倫理」學分 1.2 分","臨床教師認證 A 類 a「生理」、A 類 d「安寧」各 1 學分","CFD 核心課程 10 點","科部外教學績效積分","員工教育訓練「緩和醫療」1 學分"] },
+      { date:"4/11", weekday:"五", topic:"詐騙的辨別與應對", speaker:"錢鴻明 主任檢察官（台灣橋頭地方檢察署）", host:"黃文良主任", tags:["品質","倫理及法律","CFD 核心","資訊安全"], details:["醫師繼續教育「品質」學分 1.2 分","臨床教師認證 D 類「倫理及法律」1 學分","CFD 核心課程 10 點","科部外教學績效積分","員工教育訓練「資訊安全」1 學分"] },
+      { date:"4/15", weekday:"二", topic:"My journey in academic medicine", speaker:"程劭儀主任（台大醫院 家庭醫學部）", host:"蔡岡廷部長", tags:["品質","倫理及法律","CFD 核心","全人醫療"], details:["臨床教師認證 D 類「倫理與法律」1 學分","CFD 核心課程 10 點","醫師及專師「品質」繼續教育學分 1.2 分","科部外教學績效積分","員工教育訓練「全人醫療」1 學分"] },
+      { date:"4/25", weekday:"五", topic:"從 Prompt 到 Promise：打造 AI 先行的智慧醫療新世代", speaker:"廖家德主任（教學中心副主任／實證醫學暨醫療政策中心）", host:"陳志成副院長", tags:["品質","六大核心","進階","CFD 核心","數位賦能"], details:["醫師繼續教育「品質」學分 1.2 分","臨床教師認證 B 類、「進階」各 1 學分","CFD 核心課程 10 點","科部外教學績效積分","員工教育訓練「數位賦能」1 學分"] },
+      { date:"5/02", weekday:"五", topic:"醫療職場性騷擾防治", speaker:"江承曉 助理教授（嘉南藥理大學 社工系）", host:"陳綉琴副院長", tags:["性別","倫理","倫理及法律","CFD 核心","醫療相關法規"], details:["醫師、專師繼續教育「倫理-性別」學分 1.2 分","臨床教師認證 D 類「倫理及法律」1 學分","CFD 核心課程 10 點","科部外教學績效積分","員工教育訓練「醫療相關法規」1 學分"] },
+      { date:"5/06", weekday:"二", topic:"治本之策：脊髓性肌肉萎縮症精準治療的新突破", speaker:"鐘育志 名譽教授（高雄醫學大學前校長）", host:"陳志成副院長", tags:["專業","生理","CFD 一般"], details:["醫師、專師繼續教育「專業」學分 1.2 分","臨床教師認證 A 類 a「生理」1 學分","CFD 一般課程 5 點","科部外教學績效積分"] },
+      { date:"5/14", weekday:"三", topic:"年輕醫師培訓營 — 奇美達文西手術的發展及展望", speaker:"王家豪醫師／曾文歆醫師／吳銘斌主任 報告", host:"田宇峯首席醫療副院長 主持；田宇峯／黃冠華／吳銘斌 點評", tags:["專業","六大核心","進階","CFD 核心"], details:["醫師繼續教育「專業」學分 1.2 分","臨床教師認證 B 類「六大核心」與「進階」各 1 學分","CFD 核心課程 10 點","科部外教學績效積分"] },
+      { date:"5/23", weekday:"五", topic:"Next wave of healthcare", speaker:"余明隆校長（高雄醫學大學）", host:"郭行道副院長", tags:["品質","六大核心","CFD 核心"], details:["醫師、專師繼續教育「品質」學分 1.2 分","臨床教師認證 B 類「六大核心」1 學分","CFD 核心課程 10 點","科部外教學績效積分"] },
+      { date:"6/06", weekday:"五", topic:"深耕台南，健康台灣", speaker:"林宏榮院長", host:"陳志成副院長", tags:["品質","六大核心","CFD 核心","醫療品質","領導統御"], details:["醫師、專師繼續教育「品質」學分 1.2 分","臨床教師認證 B 類「六大核心」1 學分","CFD 核心課程 10 點","科部外教學績效積分","員工教育訓練「醫療品質」1 學分","主管培育「領導統御」1 學分"] },
+      { date:"6/11", weekday:"三", topic:"臨床倫理討論會 (CEC)", speaker:"神經外科 葉小菡醫師／鄭鴻翔醫師", host:"陳志偉主任", tags:["倫理","倫理及法律","CFD 核心","醫學倫理"], details:["醫師、專師、護理師繼續教育「倫理」學分 1.2 分","CFD 核心學分 10 分、科部外教學績效學分","臨床教師認證 D 類『倫理及法律』 1 學分","員工教育訓練「醫學倫理」1 學分"] },
+      { date:"6/13", weekday:"五", topic:"臨床病理討論會 (CPC)", speaker:"腎臟內科 簡志強醫師／呼吸治療科 鄭舒帆主任", host:"葉麗青醫師", tags:["專業","生理","CFD 一般"], details:["醫師、專科護理師繼續教育「專業」學分 1.2 分","臨床教師認證 A 類 a「生理」1 學分","CFD 一般課程 5 點","科部外教學績效積分"] },
+      { date:"6/17", weekday:"二", topic:"臨床醫療與隱私資訊保護之平衡", speaker:"王怡凱主任（病歷資訊管理室）", host:"郭行道副院長", tags:["品質","倫理及法律","CFD 核心","資訊安全","病人權利"], details:["醫師、專師繼續教育「品質」學分 1.2 分","CFD 核心學分 10 分、科部外教學績效學分","臨床教師認證 D 類『倫理及法律』 1 學分","員工教育訓練「資訊安全」、「病人權利」各 1 學分"] },
+      { date:"6/18", weekday:"三", topic:"末期心臟衰竭的外科治療趨勢", speaker:"蔡建松中將（國防軍醫局 局長）", host:"陳志成副院長", tags:["專業","生理","CFD 一般"], details:["醫師、專師繼續教育「專業」學分 1.2 分","臨床教師認證 A 類 a「生理」1 學分","CFD 一般課程 5 點","科部外教學績效積分"] },
+      { date:"7/04", weekday:"五", topic:"數位化醫療：資通安全的重要性", speaker:"陳俊龍主任（資訊室）", host:"鄭天浚副院長", tags:["品質","數位賦能","CFD 核心","資訊安全"], details:["醫師、專師繼續教育「品質」學分 1.2 分","CFD 核心學分 10 分、科部外教學績效學分","臨床教師認證 C 類『數位賦能教學』 1 學分","員工教育訓練「資訊安全」1 學分"] },
+      { date:"7/09", weekday:"三", topic:"管理與領導", speaker:"程文俊 主任委員（長庚醫院決策委員會）", host:"鄭天浚副院長", tags:["品質","六大核心","CFD 核心","醫療品質","領導統御"], details:["醫師、專師繼續教育「品質」學分 1.2 分","臨床教師認證 B 類「六大核心」1 學分","CFD 核心課程 10 點","科部外教學績效積分","員工教育訓練「醫療品質」1 學分","主管培育「領導統御」1 學分"] },
+      { date:"7/15", weekday:"二", topic:"醫心悲願 — 醫學教育這條路", speaker:"陳宗鷹教授（慈濟大學 副校長）", host:"吳銘斌主任", tags:["專業","教學技巧","CFD 核心","全人醫療"], details:["醫師、專師繼續教育「專業」學分 1.2 分","CFD 核心學分 10 分、科部外教學績效學分申請中","臨床教師認證 C 類「教學技巧」1 學分","員工教育訓練「全人醫療」1 學分"] },
+      { date:"7/16", weekday:"三", topic:"Overview of Home-Based Primary, Geriatrics, and Palliative Care Programs", speaker:"Jessica Lee, MD（德州大學休士頓醫學院）", host:"黃建程主任", tags:["品質","安寧","CFD 核心","全人醫療"], details:["醫師、專師繼續教育「品質」學分 1.2 分","CFD 核心學分 10 分、科部外教學績效學分申請中","臨床教師認證 A 類 d『安寧』 1 學分","員工教育訓練「全人醫療」1 學分"] },
+      { date:"7/23", weekday:"三", topic:"個案管理與慢病照護整合實務", speaker:"陳幼梅 副教授（高雄醫學大學）", host:"陳志成副院長", tags:["品質","長照","CFD 核心"], details:["專師繼續教育「品質」學分 1.2 分","CFD 核心學分 10 分、科部外教學績效學分申請中","臨床教師認證 A 類 d『長照』 1 學分"] },
+      { date:"8/05", weekday:"二", topic:"別讓成果只留在報告裡：品管圈成果如何跨足學術發表", speaker:"黃建程主任（整合醫療中心）", host:"杜漢祥部長", tags:["品質","六大核心","CFD 核心","醫療品質"], details:["醫師、專師繼續教育「品質」學分 1.2 分","CFD 核心學分 10 分、科部外教學績效學分申請中","臨床教師認證 B 類『六大核心』 1 學分","員工教育訓練「醫療品質」1 學分"] },
+      { date:"8/08", weekday:"五", topic:"精進醫療機構緊急應變體系之策略", speaker:"石富元醫師(台大醫院急診醫學部)", host:"鄭天浚副院長", tags:["品質","六大核心","CFD 核心","危機管理"], details:["醫師、專師繼續教育「品質」學分 1.2 分","CFD 核心學分 10 分、科部外教學績效學分申請中","臨床教師認證 B 類『六大核心』 1 學分","員工教育訓練「危機管理」1 學分"] },
+      { date:"8/13", weekday:"三", status:"cancelled", topic:"以代謝物作為人類疾病的治療標的：從發現到臨床轉譯", speaker:"郭呈欽所長（國家衛生研究院 細胞及系統醫學研究所）", host:"張瑋婷主任", note:"因楊柳颱風取消" },
+      { date:"8/29", weekday:"五", topic:"AI 智能的演進和醫療應用", speaker:"黃正能教授（美國華盛頓大學 電機和計算機系）", host:"許建清副院長", tags:["品質","數位賦能","CFD 核心"], details:["醫師、專師繼續教育「品質」學分 1.2 分","CFD 核心學分 10 分、科部外教學績效學分申請中","臨床教師認證 C 類『數位賦能教學技巧』 1 學分","員工教育訓練「數位賦能」1 學分"] },
+      { date:"9/02", weekday:"二", topic:"角色洞察與個人品牌行銷", speaker:"唐源駿 總經理（捷思整合行銷 創辦人）", host:"郭妍伶主任", timeStart:"15:00", timeEnd:"16:00", note:"本場次特殊時間：15:00–16:00", tags:["敘事醫學","CFD 核心","品質管理","行政管理與危機處理"], details:["CFD 核心學分 10 分、科部外教學績效學分申請中","臨床教師認證 Ac 類『敘事醫學』 1 學分","員工教育訓練「品質管理」1 學分","主管培育「行政管理與危機處理」1 學分"] },
+      { date:"9/05", weekday:"五", topic:"綠色醫療供應鏈節能減碳：從製造業經驗談起", speaker:"田瑛睿 總經理（東訊股份有限公司）", host:"鄭天浚副院長", tags:["品質","健康促進","CFD 核心","健康識能","行政管理與危機處理"], details:["醫師、專師繼續教育「品質」學分 1.2 分","CFD 核心學分 10 分、科部外教學績效學分申請中","臨床教師認證 Ab「健康促進」 1 學分","員工教育訓練「健康識能」1 學分","主管培育「行政管理與危機處理」1 學分"] },
+      { date:"9/10", weekday:"三", topic:"一場手術照護革命：ERAS 如何翻轉我們的臨床思維 — 我們怎麼做、做出了什麼", speaker:"周家麟主任（大腸直腸外科）", host:"陳明鎮部長", tags:["專業","六大核心","CFD 核心"], details:["醫師、專師繼續教育「專業」學分 1.2 分","CFD 核心學分 10 分、科部外教學績效學分申請中","臨床教師認證 B 類『六大核心』 1 學分"] },
+      { date:"10/03", weekday:"五", topic:"芳香療法在安寧療護常見症狀照護的實證與應用", speaker:"吳秀珍主任（台東聖母醫院 芳香照護推廣中心）", host:"張榮哲主任", tags:["品質","六大核心","CFD 核心","緩和醫療"], details:["醫師、專師繼續教育「品質」學分 1.2 分","CFD 核心學分 10 分、科部外教學績效學分申請中","臨床教師認證 B「六大核心」 1 學分","員工教育訓練「緩和醫療」1 學分"] },
+      { date:"10/17", weekday:"五", topic:"智慧醫療運用在醫院經營管理", speaker:"傅雲慶院長（臺中榮民總醫院）", host:"陳志成副院長", tags:["品質","數位賦能","CFD 核心"], details:["醫師、專師繼續教育「品質」學分 1.2 分","CFD 核心學分 10 分、科部外教學績效學分申請中","臨床教師認證 C 類「數位賦能」 1 學分","員工教育訓練「數位賦能」1 學分"] },
+      { date:"11/07", weekday:"五", topic:"談全人健康的靈性照顧", speaker:"蔣寶玲執行長（史懷哲基金會）", host:"黃建元總監", tags:["品質","心理","CFD 核心","緩和醫療"], details:["醫師、專師繼續教育「品質」學分 1.2 分","CFD 核心學分 10 分、科部外教學績效學分申請中","臨床教師認證 A 類 b「心理」 1 學分","員工教育訓練「緩和醫療」1 學分"] },
+      { date:"11/18", weekday:"二", topic:"台灣癌症發展史：追求卓越癌症治療的軌跡", speaker:"鄭安理教授（台大癌醫分院 榮譽院長）", host:"郭雨萱主任", tags:["專業","生理","CFD 一般"], details:["醫師、專師繼續教育「專業」學分 1.2 分","臨床教師認證 A 類 a「生理」1 學分","CFD 一般課程 5 點","科部外教學績效積分"] },
+      { date:"11/21", weekday:"五", topic:"日本醫院與社區的全人醫學教育", speaker:"大西弘高博士（日本東京大學醫學研究所）", host:"黃建元總監", tags:["品質","長照","CFD 核心","全人醫療"], details:["醫師、專師繼續教育「品質」學分 1.2 分","CFD 核心學分 10 分、科部外教學績效學分申請中","臨床教師認證 A 類 d「長照」 1 學分","員工教育訓練「全人醫療」1 學分"] },
+      { date:"12/10", weekday:"三", topic:"臨床倫理討論會 (CEC)", speaker:"高金盆 督導（居家服務中心）", host:"江惠英副部長", tags:["倫理","倫理及法律","CFD 核心","醫學倫理"], details:["醫師、專師、護理師繼續教育「倫理」學分 1.2 分","CFD 核心學分 10 分、科部外教學績效學分申請中","臨床教師認證 D 類『倫理及法律』 1 學分","員工教育訓練「醫學倫理」1 學分"] },
+      { date:"12/12", weekday:"五", topic:"臨床病理討論會 (CPC)", speaker:"胃腸肝膽科 楊畯棋醫師／皮膚科 陳麒亘醫師", host:"李宛珊主任", tags:["專業","生理","CFD 一般"], details:["醫師、專科護理師繼續教育「專業」學分 1.2 分","臨床教師認證 A 類 a「生理」1 學分","CFD 一般課程 5 點","科部外教學績效積分"] },
+      { date:"12/16", weekday:"二", topic:"從資料到行動：打造台灣傳染病監測的智慧防線", speaker:"莊人祥 常務次長（衛生福利部）", host:"許建清副院長", tags:["品質","六大核心","CFD 核心"], details:["醫師、專師繼續教育「品質」學分 1.2 分","CFD 核心學分 10 分、科部外教學績效學分申請中","臨床教師認證 B 類「六大核心能力」 1 學分"] },
+      { date:"12/17", weekday:"三", topic:"跨越預後困境：從美國經驗看神經膠質母細胞瘤 (GBM) 治療的新策略", speaker:"Clark C. Chen, MD, PhD（布朗大學 神經外科）", host:"陳志偉主任", tags:["專業","生理","CFD 一般"], details:["醫師、專師繼續教育「專業」學分 1.2 分","臨床教師認證 A 類 a「生理」1 學分","CFD 一般課程 5 點","科部外教學績效積分"] }
+    ]
+  },
   /* ───── 新年度上線方式 ─────
    * 當 116 / 117 年度課程確認後，在這裡加入：
    *   116: { adYear: 2027, updated: "116.MM.DD", location: "第五醫療大樓五樓國際會議廳",
@@ -837,9 +903,15 @@ const TAG_LABEL = {
   "進階":       "CFD 進階",
   "生理":       "CFD Aa類生理",
   "健康促進":   "CFD Ab類健康促進",
+  "疾病預防":   "CFD Ab類疾病預防",
+  "心理":       "CFD Ab類心理",
   "醫學人文":   "CFD Ac類醫學人文",
+  "敘事醫學":   "CFD Ac類敘事醫學",
   "安寧":       "CFD Ad類安寧",
   "社會、長照": "CFD Ad類社會長照",
+  "長照":       "CFD Ad類長照",
+  "教學技巧":   "CFD C類教學技巧",
+  "數位賦能":   "CFD C類數位賦能",
   "倫理及法律": "CFD D類倫理及法律"
 };
 const TAG_HIDDEN = new Set(["CFD 核心", "CFD 一般"]);
@@ -900,13 +972,16 @@ function renderYearTabs() {
   wrap.innerHTML = years.map(y => {
     const yr = SCHEDULE[y];
     const isThisYear = yr.adYear === TODAY_AD_YEAR;
+    const isPastYear = yr.adYear < TODAY_AD_YEAR;
     const hasData = yr.courses && yr.courses.length > 0;
     const cls = ["year-tab"];
     if (Number(y) === currentYear) cls.push("active");
     if (!hasData) cls.push("tba");
+    if (isPastYear) cls.push("past");
     return `<button class="${cls.join(" ")}" data-year="${y}">
       ${y} 年度（${yr.adYear}）
       ${isThisYear ? '<span class="pill">本年度</span>' : ''}
+      ${isPastYear && hasData ? '<span class="pill">已結束</span>' : ''}
       ${!hasData ? '<span class="pill">待公告</span>' : ''}
     </button>`;
   }).join("");
@@ -1203,8 +1278,11 @@ function foldLine(line) {
 
 function buildVEvent(course, twYear) {
   const yr = SCHEDULE[twYear];
-  const dtStart = adDateString(twYear, course.date, yr.timeStart);
-  const dtEnd = adDateString(twYear, course.date, yr.timeEnd);
+  // 課程層級可覆蓋年度層級的時段（用於特殊時間場次，如 4PM 或 15:00）
+  const tStart = course.timeStart || yr.timeStart;
+  const tEnd   = course.timeEnd   || yr.timeEnd;
+  const dtStart = adDateString(twYear, course.date, tStart);
+  const dtEnd = adDateString(twYear, course.date, tEnd);
   const uid = `cm-lecture-${twYear}-${course.date.replace("/","")}@chimei.org.tw`;
   const summary = `全院演講｜${course.topic || "主題待公告"}`;
   const location = course.location || yr.location;
