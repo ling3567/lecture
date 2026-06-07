@@ -100,6 +100,44 @@ function ensureSheet_(ss, name) {
   return sheet;
 }
 
+// ============ 一鍵修復：把日期欄位強制改成純文字 ============
+// 如果你曾經把資料匯入 Sheet 後發現日期顯示異常，請在 Apps Script 編輯器
+// 選單 [執行 → fixDates] 跑一次。
+
+function fixDates() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const tz = Session.getScriptTimeZone() || "Asia/Taipei";
+  const targets = [
+    { sheetName: SHEET_NAMES.COURSES, cols: { date: "date", timeStart: "timeStart", timeEnd: "timeEnd" } },
+    { sheetName: SHEET_NAMES.YEARS,   cols: { updated: "updated", timeStart: "timeStart", timeEnd: "timeEnd" } }
+  ];
+  let fixedCount = 0;
+  for (const t of targets) {
+    const sheet = ss.getSheetByName(t.sheetName);
+    if (!sheet) continue;
+    const lastRow = sheet.getLastRow();
+    const lastCol = sheet.getLastColumn();
+    if (lastRow < 2) continue;
+    const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h).trim());
+    for (const headerName in t.cols) {
+      const colIdx = headers.indexOf(headerName); // 0-indexed
+      if (colIdx === -1) continue;
+      const range = sheet.getRange(2, colIdx + 1, lastRow - 1, 1);
+      const values = range.getValues();
+      const converted = values.map(([v]) => {
+        if (v instanceof Date) { fixedCount++; return [formatDateCell_(headerName, v)]; }
+        return [v];
+      });
+      range.setNumberFormat("@"); // 強制純文字
+      range.setValues(converted);
+    }
+  }
+  SpreadsheetApp.getUi().alert(
+    "✅ 完成！\n\n共修復 " + fixedCount + " 個被誤判為日期的儲存格，\n" +
+    "並將相關欄位強制設為純文字格式，避免未來再被自動轉換。"
+  );
+}
+
 // ============ 入口 ============
 
 function doGet(e) {
@@ -163,10 +201,29 @@ function sheetToObjects(sheet) {
     .map(row => {
       const obj = {};
       headers.forEach((h, i) => {
-        if (h) obj[h] = row[i] === null ? "" : row[i];
+        let val = row[i];
+        if (val === null || val === undefined) val = "";
+        // 修正：Google Sheet 會把 "1/16" 自動辨識為 Date 物件，這裡轉回字串
+        if (val instanceof Date) val = formatDateCell_(h, val);
+        if (h) obj[h] = val;
       });
       return obj;
     });
+}
+
+function formatDateCell_(headerName, d) {
+  if (headerName === "date") {
+    return (d.getMonth() + 1) + "/" + String(d.getDate()).padStart(2, "0");
+  }
+  if (headerName === "timeStart" || headerName === "timeEnd") {
+    return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  }
+  if (headerName === "updated") {
+    // 民國年.月.日 (例如 115.06.04)
+    const y = d.getFullYear() - 1911;
+    return y + "." + String(d.getMonth() + 1).padStart(2, "0") + "." + String(d.getDate()).padStart(2, "0");
+  }
+  return Utilities.formatDate(d, Session.getScriptTimeZone() || "Asia/Taipei", "yyyy-MM-dd");
 }
 
 // ============ 驗證 ============

@@ -1938,6 +1938,25 @@ async function loadFromSheet() {
   SCHEDULE = buildScheduleFromSheet(data);
 }
 
+/* 將 Sheet 可能回傳的 ISO 日期字串或其他格式 → 正規化成 "M/D"
+ * (Google Sheet 自動把 "1/16" 識別為日期物件時的安全網)
+ */
+function normalizeDateStr(v) {
+  if (!v && v !== 0) return "";
+  const s = String(v);
+  // 已是 M/D 格式
+  if (/^\d{1,2}\/\d{1,2}$/.test(s)) return s;
+  // ISO 帶時間 (e.g. 2026-01-15T16:00:00.000Z)
+  if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) return (d.getMonth() + 1) + "/" + String(d.getDate()).padStart(2, "0");
+  }
+  // ISO 純日期 (e.g. 2026-01-16)
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return parseInt(m[2], 10) + "/" + String(parseInt(m[3], 10)).padStart(2, "0");
+  return s;
+}
+
 function buildScheduleFromSheet({ years, courses }) {
   const out = {};
   for (const y of (years || [])) {
@@ -1954,7 +1973,7 @@ function buildScheduleFromSheet({ years, courses }) {
   for (const c of (courses || [])) {
     const year = String(c.year);
     if (!out[year]) continue;
-    const course = { id: c.id, date: String(c.date || ""), weekday: String(c.weekday || "") };
+    const course = { id: c.id, date: normalizeDateStr(c.date), weekday: String(c.weekday || "") };
     if (c.status) course.status = String(c.status);
     if (c.topic) course.topic = String(c.topic);
     if (c.speaker) course.speaker = String(c.speaker);
