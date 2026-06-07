@@ -1548,9 +1548,9 @@ function renderSpotlight() {
   // 過去的年度（adYear < 今年）不顯示
   if (yr.adYear < TODAY_AD_YEAR) { spotlight.style.display = "none"; return; }
 
-  // 從今天起的有效課程（排除取消/休假/待公告）
+  // 從今天起的有效課程（排除取消/休假/待公告，並自動排除國定假日當天）
   const upcoming = yr.courses
-    .filter(c => !c.status && isFutureOrToday(currentYear, c.date))
+    .filter(c => !c.status && !getHoliday(currentYear, c.date) && isFutureOrToday(currentYear, c.date))
     .filter(c => daysUntil(currentYear, c.date) <= SPOTLIGHT_DAYS)
     .slice(0, SPOTLIGHT_LIMIT);
 
@@ -1656,19 +1656,40 @@ function statusBadge(c) {
 function buildCard(c, idx, showYear) {
   const [m, d] = c.date.split("/");
   const cardYear = c._year || currentYear;
-  const cls = ["course-card"];
-  if (c.status) cls.push(`status-${c.status}`);
 
-  // 「即將開課」: 從今天起 14 天內 → 列表中以淺金色高亮，更貼近實際時間感
-  const isSoon = !c.status && (() => {
+  // 偵測國定假日 (僅在沒有明確 status 時自動套用，會覆蓋顯示)
+  const autoHoliday = !c.status ? getHoliday(cardYear, c.date) : null;
+  const effectiveStatus = c.status || (autoHoliday ? "holiday" : "");
+  const autoHolidayNote = autoHoliday ? `適逢${autoHoliday}，暫停乙次` : "";
+
+  const cls = ["course-card"];
+  if (effectiveStatus) cls.push(`status-${effectiveStatus}`);
+
+  // 「即將到來」: 從今天起 14 天內，且非任何狀態
+  const isSoon = !effectiveStatus && (() => {
     const dd = daysUntil(cardYear, c.date);
     return dd >= 0 && dd <= 14;
   })();
   if (isSoon) cls.push("is-upcoming");
 
-  const topic = c.topic || (c.status === "cancelled" ? "本次暫停" :
-                            c.status === "holiday" ? (c.note || "假期暫停") :
-                            c.status === "tba" ? "主題待公告" : "");
+  // 主題顯示優先序：
+  //   1. 自動偵測假日 → 強制顯示「適逢X，暫停乙次」(覆蓋原講題)
+  //   2. 明確標 cancelled → 保留原講題以利溯及，CSS 加刪除線
+  //   3. 明確標 holiday → 使用 note 文字 (例如「勞動節暫停乙次」)
+  //   4. 明確標 tba → 「主題待公告」
+  //   5. 正常 → 原講題
+  let topic;
+  if (autoHoliday) {
+    topic = autoHolidayNote;
+  } else if (effectiveStatus === "cancelled") {
+    topic = c.topic || "本次暫停";
+  } else if (effectiveStatus === "holiday") {
+    topic = c.note || c.topic || "假期暫停";
+  } else if (effectiveStatus === "tba") {
+    topic = c.topic || "主題待公告";
+  } else {
+    topic = c.topic || "";
+  }
 
   const soonBadge = isSoon ? '<span class="status-badge badge-current">即將到來</span>' : '';
   const yearBadge = showYear ? `<span class="badge-year">${cardYear} 年</span>` : '';
@@ -1682,24 +1703,24 @@ function buildCard(c, idx, showYear) {
     <div class="course-body">
       <div class="course-topic">${yearBadge}${escapeHtml(topic)} ${soonBadge}</div>`;
 
-  if (c.speaker || c.host || c.note) {
+  // 自動偵測假日時，隱藏原講者/主持/學分等資訊 (避免誤導讀者以為這場有開)
+  if (!autoHoliday && (c.speaker || c.host || c.note)) {
     html += `<div class="course-info">`;
     if (c.speaker) html += `<div class="info-item"><span class="info-label">主講｜</span><span class="info-value">${escapeHtml(c.speaker)}</span></div>`;
     if (c.host) html += `<div class="info-item"><span class="info-label">主持｜</span><span class="info-value">${escapeHtml(c.host)}</span></div>`;
-    if (c.note && c.status !== "holiday") html += `<div class="info-item"><span class="info-label">備註｜</span><span class="info-value">${escapeHtml(c.note)}</span></div>`;
+    if (c.note && effectiveStatus !== "holiday") html += `<div class="info-item"><span class="info-label">備註｜</span><span class="info-value">${escapeHtml(c.note)}</span></div>`;
     html += `</div>`;
   }
 
-  const visibleTags = (c.tags || []).filter(t => !TAG_HIDDEN.has(t));
+  const visibleTags = autoHoliday ? [] : (c.tags || []).filter(t => !TAG_HIDDEN.has(t));
   if (visibleTags.length) {
     html += `<div class="credit-tags">` + visibleTags.map(t => {
-      // 只有 details 裡有「臨床教師認證」對應描述時，才掛 CFD 前綴
       const label = (TAG_LABEL[t] && isFacultyCertTag(t, c.details)) ? TAG_LABEL[t] : t;
       return `<span class="credit-tag">${escapeHtml(label)}</span>`;
     }).join("") + `</div>`;
   }
 
-  if (c.details && c.details.length) {
+  if (!autoHoliday && c.details && c.details.length) {
     html += `<div class="credit-detail">` + c.details.map(d => `<span class="credit-detail-line">• ${escapeHtml(d)}</span>`).join("") + `</div>`;
   }
 
@@ -2625,6 +2646,52 @@ function buildWordRow(c) {
 /* =========================================================
  * 學分明細 → 自動勾選對應學分類別
  * ========================================================= */
+/* =========================================================
+ * 中華民國國定假日（依人事行政總處公告）
+ * key: 民國年, value: { "M/D": "假日名稱" }
+ * 只列上班日 (週一至週五) 之假日；週六/日本來就沒演講
+ * 未來年度公告後，在此補上即可自動套用
+ * ========================================================= */
+const TAIWAN_HOLIDAYS = {
+  114: {  // 2025
+    "1/1":   "中華民國開國紀念日",
+    "1/27":  "春節彈性放假",
+    "1/28":  "農曆除夕",
+    "1/29":  "春節",
+    "1/30":  "春節",
+    "1/31":  "春節",
+    "2/28":  "和平紀念日",
+    "4/3":   "兒童節彈性放假",
+    "4/4":   "兒童節、民族掃墓節",
+    "10/6":  "中秋節",
+    "10/10": "國慶日"
+  },
+  115: {  // 2026
+    "1/1":   "中華民國開國紀念日",
+    "2/16":  "農曆除夕",
+    "2/17":  "春節",
+    "2/18":  "春節",
+    "2/19":  "春節",
+    "2/20":  "春節",
+    "2/27":  "和平紀念日彈性放假",
+    "4/3":   "兒童節、民族掃墓節彈性放假",
+    "4/6":   "兒童節、民族掃墓節補假",
+    "5/1":   "勞動節",
+    "6/19":  "端午節",
+    "9/25":  "中秋節",
+    "10/9":  "國慶日彈性放假"
+  }
+};
+
+/* 將日期字串正規化（支援 "1/1" "1/01" "01/01" 三種寫法） */
+function getHoliday(twYear, dateStr) {
+  const table = TAIWAN_HOLIDAYS[twYear];
+  if (!table || !dateStr) return null;
+  const [m, d] = String(dateStr).split("/").map(n => parseInt(n, 10));
+  if (isNaN(m) || isNaN(d)) return null;
+  return table[`${m}/${d}`] || table[`${m}/${String(d).padStart(2,"0")}`] || null;
+}
+
 const KNOWN_TAGS_SET = new Set([
   "專業","品質","倫理","性別",
   "生理","健康促進","疾病預防","心理","醫學人文","敘事醫學",
