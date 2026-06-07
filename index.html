@@ -1089,9 +1089,7 @@
       </div>
       <div class="form-error" id="login-error"></div>
       <div class="form-hint">
-        密碼以 SHA-256 雜湊方式儲存於原始碼。前端認證僅用於避免一般訪客誤改資料；
-        嚴格的權限管理請改用後端服務。
-        <br><button type="button" class="admin-link" id="btn-gen-hash" style="margin-left:0;margin-top:6px">🔑 產生新密碼雜湊</button>
+        密碼存於 Google Sheet 的 Auth 工作表。要變更密碼請直接編輯 Sheet 中對應的列。
       </div>
     </form>
     <div class="modal-foot">
@@ -2218,7 +2216,6 @@ $("btn-admin-login").addEventListener("click", () => {
 $("btn-login-submit").addEventListener("click", attemptLogin);
 $("login-form").addEventListener("submit", attemptLogin);
 $("login-pass").addEventListener("keydown", (e) => { if (e.key === "Enter") attemptLogin(e); });
-$("btn-gen-hash").addEventListener("click", genPasswordHash);
 
 async function attemptLogin(e) {
   if (e && e.preventDefault) e.preventDefault();
@@ -2260,22 +2257,6 @@ async function attemptLogin(e) {
   }
 }
 
-// 產生新密碼雜湊小工具
-async function genPasswordHash() {
-  const pw = prompt("請輸入新密碼\n（不會儲存，僅用來計算 SHA-256 雜湊）");
-  if (!pw) return;
-  if (pw.length < 4) { alert("密碼至少 4 個字元"); return; }
-  const hash = await sha256Hex(pw);
-  try {
-    await navigator.clipboard.writeText(hash);
-    alert(`新密碼的 SHA-256 雜湊（已複製到剪貼簿）：\n\n${hash}\n\n` +
-          `請打開 index.html，找到 ADMIN_CONFIG 區塊，\n` +
-          `將 passwordHash 的值換成這串雜湊，\n` +
-          `commit 後新密碼即生效。`);
-  } catch (e) {
-    prompt("新密碼的 SHA-256 雜湊（請手動複製）：", hash);
-  }
-}
 
 // 登出
 $("btn-logout").addEventListener("click", () => {
