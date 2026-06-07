@@ -993,7 +993,7 @@
         共顯示 <strong id="count">0</strong> 筆課程
       </div>
       <div class="toggle-row">
-        <label><input type="checkbox" id="cross-year" /> 🌐 跨年度搜尋（114 + 115…）</label>
+        <label><input type="checkbox" id="cross-year" /> 🌐 跨年度搜尋<span id="cross-year-years"></span></label>
         <label><input type="checkbox" id="hide-inactive" /> 隱藏取消／休假／待定</label>
         <button class="btn-clear" id="btn-clear" title="清除所有篩選條件">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -1777,6 +1777,14 @@ function render() {
   placeholderEl.style.display = "none";
   filterCard.style.display = "block";
   listEl.style.display = "flex";
+
+  // 更新「跨年度搜尋」label：列出實際會被搜尋的年度 (動態，自動反映新年度)
+  const searchableYears = Object.keys(SCHEDULE).map(Number)
+    .filter(y => SCHEDULE[y].courses && SCHEDULE[y].courses.some(c => isAdmin || !c._skeleton))
+    .sort((a,b) => b - a);
+  $("cross-year-years").textContent = searchableYears.length
+    ? `（${searchableYears.join(" + ")} 年度）`
+    : "";
 
   // 跨年度搜尋：把所有年度的課程平攤，加上 _year 標記
   const isCross = filters.crossYear.checked;
