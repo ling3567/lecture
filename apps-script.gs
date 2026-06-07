@@ -105,36 +105,57 @@ function ensureSheet_(ss, name) {
 // 選單 [執行 → fixDates] 跑一次。
 
 function fixDates() {
+  const startTime = Date.now();
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const tz = Session.getScriptTimeZone() || "Asia/Taipei";
-  const targets = [
-    { sheetName: SHEET_NAMES.COURSES, cols: { date: "date", timeStart: "timeStart", timeEnd: "timeEnd" } },
-    { sheetName: SHEET_NAMES.YEARS,   cols: { updated: "updated", timeStart: "timeStart", timeEnd: "timeEnd" } }
+  const tasks = [
+    { sheetName: SHEET_NAMES.COURSES, cols: ["date", "timeStart", "timeEnd"] },
+    { sheetName: SHEET_NAMES.YEARS,   cols: ["updated", "timeStart", "timeEnd"] }
   ];
   let fixedCount = 0;
-  for (const t of targets) {
+
+  for (const t of tasks) {
     const sheet = ss.getSheetByName(t.sheetName);
     if (!sheet) continue;
     const lastRow = sheet.getLastRow();
     const lastCol = sheet.getLastColumn();
-    if (lastRow < 2) continue;
+    if (lastRow < 2 || lastCol === 0) continue;
+
     const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h).trim());
-    for (const headerName in t.cols) {
-      const colIdx = headers.indexOf(headerName); // 0-indexed
-      if (colIdx === -1) continue;
-      const range = sheet.getRange(2, colIdx + 1, lastRow - 1, 1);
-      const values = range.getValues();
-      const converted = values.map(([v]) => {
-        if (v instanceof Date) { fixedCount++; return [formatDateCell_(headerName, v)]; }
-        return [v];
-      });
-      range.setNumberFormat("@"); // 強制純文字
-      range.setValues(converted);
+    const targetCols = t.cols
+      .map(name => ({ name, idx: headers.indexOf(name) }))
+      .filter(c => c.idx !== -1);
+    if (targetCols.length === 0) continue;
+
+    // 一次讀取整張表的資料區 (大幅減少 API 呼叫)
+    const range = sheet.getRange(2, 1, lastRow - 1, lastCol);
+    const values = range.getValues();
+
+    // 記憶體內轉換
+    let touched = false;
+    for (let r = 0; r < values.length; r++) {
+      for (const { name, idx } of targetCols) {
+        const v = values[r][idx];
+        if (v instanceof Date) {
+          values[r][idx] = formatDateCell_(name, v);
+          fixedCount++;
+          touched = true;
+        }
+      }
+    }
+
+    // 一次寫回整張表的資料區
+    if (touched) range.setValues(values);
+
+    // 一次性把目標欄位格式設為純文字 (整個工作表的最大列數)
+    for (const { idx } of targetCols) {
+      sheet.getRange(2, idx + 1, Math.max(sheet.getMaxRows() - 1, 1), 1).setNumberFormat("@");
     }
   }
+
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
   SpreadsheetApp.getUi().alert(
-    "✅ 完成！\n\n共修復 " + fixedCount + " 個被誤判為日期的儲存格，\n" +
-    "並將相關欄位強制設為純文字格式，避免未來再被自動轉換。"
+    "✅ 完成！\n\n共修復 " + fixedCount + " 個被誤判為日期的儲存格。\n" +
+    "已將相關欄位強制設為純文字格式。\n\n耗時 " + elapsed + " 秒。"
   );
 }
 
