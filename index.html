@@ -785,6 +785,52 @@
 
   body.admin-mode { padding-bottom: 80px; }
 
+  /* 行事曆選單 */
+  .cal-event-info {
+    background: var(--primary-light);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+  }
+  .cal-event-title {
+    font-size: 14px; font-weight: 700;
+    color: var(--primary-dark); line-height: 1.4;
+    margin-bottom: 4px;
+  }
+  .cal-event-time {
+    font-size: 12.5px; color: var(--gray-500);
+  }
+  .cal-options { display: flex; flex-direction: column; gap: 8px; }
+  .cal-opt {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px;
+    background: #fff;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 10px;
+    font-family: inherit;
+    color: var(--gray-900);
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+  }
+  .cal-opt:hover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    transform: translateX(2px);
+  }
+  .cal-opt svg { width: 28px; height: 28px; flex-shrink: 0; }
+  .cal-opt-name { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+  .cal-opt-desc { font-size: 12px; color: var(--gray-500); }
+
+  /* 跨年度搜尋徽章 */
+  .badge-year {
+    background: var(--primary); color: #fff;
+    padding: 2px 10px; border-radius: 12px;
+    font-size: 11.5px; font-weight: 600;
+    margin-right: 6px;
+  }
+
   /* 載入畫面 (Sheet 模式啟動時) */
   .loading-overlay {
     position: fixed; inset: 0;
@@ -947,6 +993,7 @@
         共顯示 <strong id="count">0</strong> 筆課程
       </div>
       <div class="toggle-row">
+        <label><input type="checkbox" id="cross-year" /> 🌐 跨年度搜尋（114 + 115…）</label>
         <label><input type="checkbox" id="hide-inactive" /> 隱藏取消／休假／待定</label>
         <button class="btn-clear" id="btn-clear" title="清除所有篩選條件">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -990,6 +1037,42 @@
   </button>
   <img id="lightbox-img" src="" alt="" />
   <div class="lightbox-hint">點任意處或按 Esc 關閉</div>
+</div>
+
+<!-- 行事曆選單 Modal -->
+<div class="modal-overlay" id="cal-modal" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-head">
+      <div class="modal-title">📅 加入行事曆</div>
+      <button class="modal-x" data-close="cal-modal" aria-label="關閉"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal-body" style="padding-top:14px">
+      <div class="cal-event-info" id="cal-event-info"></div>
+      <div class="cal-options">
+        <a class="cal-opt" id="cal-google" href="#" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M6 3v3M18 3v3M3 9h18M5 5h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" stroke="#4285F4" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="14" r="2.5" fill="#EA4335"/></svg>
+          <div>
+            <div class="cal-opt-name">Google 日曆</div>
+            <div class="cal-opt-desc">開新分頁，自動帶入活動資料</div>
+          </div>
+        </a>
+        <a class="cal-opt" id="cal-outlook" href="#" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="#0078D4" stroke-width="2"/><path d="M7 12l3 3 7-7" stroke="#0078D4" stroke-width="2" stroke-linecap="round"/></svg>
+          <div>
+            <div class="cal-opt-name">Outlook 日曆</div>
+            <div class="cal-opt-desc">開新分頁，自動帶入活動資料</div>
+          </div>
+        </a>
+        <button class="cal-opt" id="cal-ics">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="#0a6b7c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div>
+            <div class="cal-opt-name">下載 .ics 檔</div>
+            <div class="cal-opt-desc">適用 Apple 行事曆、Thunderbird 等其他軟體</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- 管理者登入 Modal -->
@@ -1390,6 +1473,7 @@ const filters = {
   topic: $("f-topic"),
   credit: $("f-credit"),
   hide: $("hide-inactive"),
+  crossYear: $("cross-year"),
 };
 
 /* =========================================================
@@ -1398,7 +1482,12 @@ const filters = {
 function renderYearTabs() {
   const wrap = $("year-tabs");
   const years = Object.keys(SCHEDULE).sort((a,b) => Number(b)-Number(a));
-  wrap.innerHTML = years.map(y => {
+  // 只顯示「有實際課程」的年度 (公開檢視時隱藏未公告年度)；管理者依然看得到所有年度
+  const visibleYears = years.filter(y => {
+    if (isAdmin) return true;
+    return SCHEDULE[y].courses && SCHEDULE[y].courses.some(c => !c._skeleton);
+  });
+  wrap.innerHTML = visibleYears.map(y => {
     const yr = SCHEDULE[y];
     const isThisYear = yr.adYear === TODAY_AD_YEAR;
     const isPastYear = yr.adYear < TODAY_AD_YEAR;
@@ -1408,7 +1497,7 @@ function renderYearTabs() {
     if (!hasData) cls.push("tba");
     if (isPastYear) cls.push("past");
     return `<button class="${cls.join(" ")}" data-year="${y}">
-      ${y} 年度（${yr.adYear}）
+      ${y} 年度
       ${isThisYear ? '<span class="pill">本年度</span>' : ''}
       ${isPastYear && hasData ? '<span class="pill">已結束</span>' : ''}
       ${!hasData ? '<span class="pill">待公告</span>' : ''}
@@ -1433,6 +1522,7 @@ function selectYear(y) {
   filters.topic.value = "";
   filters.credit.value = "";
   filters.hide.checked = false;
+  filters.crossYear.checked = false;
   render();
 }
 
@@ -1519,8 +1609,7 @@ function renderSpotlight() {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       const idx = Number(btn.dataset.spotIdx);
-      downloadICS([upcoming[idx]]);
-      showToast("已加入行事曆 ✓");
+      openCalMenu(upcoming[idx], currentYear);
     });
   });
 
@@ -1572,14 +1661,15 @@ function statusBadge(c) {
   return "";
 }
 
-function buildCard(c, idx) {
+function buildCard(c, idx, showYear) {
   const [m, d] = c.date.split("/");
+  const cardYear = c._year || currentYear;
   const cls = ["course-card"];
   if (c.status) cls.push(`status-${c.status}`);
 
   // 「即將開課」: 從今天起 14 天內 → 列表中以淺金色高亮，更貼近實際時間感
   const isSoon = !c.status && (() => {
-    const dd = daysUntil(currentYear, c.date);
+    const dd = daysUntil(cardYear, c.date);
     return dd >= 0 && dd <= 14;
   })();
   if (isSoon) cls.push("is-upcoming");
@@ -1589,6 +1679,7 @@ function buildCard(c, idx) {
                             c.status === "tba" ? "主題待公告" : "");
 
   const soonBadge = isSoon ? '<span class="status-badge badge-current">即將到來</span>' : '';
+  const yearBadge = showYear ? `<span class="badge-year">${cardYear} 年</span>` : '';
 
   let html = `<div class="${cls.join(" ")}">
     <div class="date-block" data-month="${parseInt(m, 10)}">
@@ -1597,7 +1688,7 @@ function buildCard(c, idx) {
       <div class="date-weekday">星期${c.weekday}</div>
     </div>
     <div class="course-body">
-      <div class="course-topic">${escapeHtml(topic)} ${soonBadge}</div>`;
+      <div class="course-topic">${yearBadge}${escapeHtml(topic)} ${soonBadge}</div>`;
 
   if (c.speaker || c.host || c.note) {
     html += `<div class="course-info">`;
@@ -1691,16 +1782,31 @@ function render() {
   filterCard.style.display = "block";
   listEl.style.display = "flex";
 
-  filteredCache = yr.courses.filter(matches);
-  listEl.innerHTML = filteredCache.map((c, i) => buildCard(c, i)).join("");
+  // 跨年度搜尋：把所有年度的課程平攤，加上 _year 標記
+  const isCross = filters.crossYear.checked;
+  let pool;
+  if (isCross) {
+    pool = [];
+    for (const y of Object.keys(SCHEDULE).map(Number).sort((a,b)=>b-a)) {
+      for (const c of SCHEDULE[y].courses) {
+        if (!isAdmin && c._skeleton) continue;
+        pool.push({ ...c, _year: y });
+      }
+    }
+  } else {
+    pool = yr.courses;
+  }
+
+  filteredCache = pool.filter(matches);
+  listEl.innerHTML = filteredCache.map((c, i) => buildCard(c, i, isCross)).join("");
   countEl.textContent = filteredCache.length;
   emptyEl.style.display = filteredCache.length === 0 ? "block" : "none";
 
   listEl.querySelectorAll("[data-card-idx]").forEach(btn => {
     btn.addEventListener("click", () => {
       const idx = Number(btn.dataset.cardIdx);
-      downloadICS([filteredCache[idx]]);
-      showToast("已加入行事曆 ✓");
+      const c = filteredCache[idx];
+      openCalMenu(c, c._year || currentYear);
     });
   });
 
@@ -1817,6 +1923,71 @@ function buildICSDocument(courses, twYear) {
   ].join("\r\n");
 }
 
+/* 各家行事曆 deep link 產生 */
+function buildCalendarLinks(course, twYear) {
+  const yr = SCHEDULE[twYear];
+  const tStart = course.timeStart || yr.timeStart;
+  const tEnd   = course.timeEnd   || yr.timeEnd;
+  const ad = twToAdYear(twYear);
+  const [m, d]   = course.date.split("/").map(n => parseInt(n, 10));
+  const [sh, sm] = tStart.split(":").map(n => parseInt(n, 10));
+  const [eh, em] = tEnd.split(":").map(n => parseInt(n, 10));
+
+  // UTC 時間 (Taipei UTC+8)
+  const startUtc = new Date(Date.UTC(ad, m - 1, d, sh - 8, sm));
+  const endUtc   = new Date(Date.UTC(ad, m - 1, d, eh - 8, em));
+  const fmtUtc = (date) => date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const dtUtc  = `${fmtUtc(startUtc)}/${fmtUtc(endUtc)}`;
+
+  // 本地 ISO (給 Outlook 用)
+  const isoLocal = (h, mn) => `${ad}-${pad2(m)}-${pad2(d)}T${pad2(h)}:${pad2(mn)}:00`;
+
+  const title = `全院演講｜${course.topic || "主題待公告"}`;
+  const descLines = [];
+  if (course.speaker) descLines.push(`主講：${course.speaker}`);
+  if (course.host) descLines.push(`主持：${course.host}`);
+  if (course.details && course.details.length) {
+    descLines.push("");
+    descLines.push("學分：");
+    course.details.forEach(x => descLines.push(`• ${x}`));
+  }
+  if (course.note) descLines.push(`備註：${course.note}`);
+  const description = descLines.join("\n");
+  const location = course.location || yr.location;
+
+  const googleParams = new URLSearchParams({
+    action: "TEMPLATE", text: title, dates: dtUtc,
+    details: description, location, ctz: "Asia/Taipei"
+  });
+  const outlookParams = new URLSearchParams({
+    path: "/calendar/action/compose", rru: "addevent",
+    subject: title, startdt: isoLocal(sh, sm), enddt: isoLocal(eh, em),
+    body: description, location
+  });
+
+  return {
+    google:  `https://calendar.google.com/calendar/render?${googleParams}`,
+    outlook: `https://outlook.live.com/calendar/0/deeplink/compose?${outlookParams}`
+  };
+}
+
+/* 顯示行事曆選單 */
+let _calCourseRef = null;
+function openCalMenu(course, twYear) {
+  _calCourseRef = course;
+  const yr = SCHEDULE[twYear];
+  const tStart = course.timeStart || yr.timeStart;
+  const tEnd = course.timeEnd || yr.timeEnd;
+  const topic = course.topic || "主題待公告";
+  $("cal-event-info").innerHTML =
+    `<div class="cal-event-title">${escapeHtml(topic)}</div>` +
+    `<div class="cal-event-time">${escapeHtml(course.date)}（${escapeHtml(course.weekday || "")}）　${escapeHtml(tStart)}–${escapeHtml(tEnd)}</div>`;
+  const links = buildCalendarLinks(course, twYear);
+  $("cal-google").href  = links.google;
+  $("cal-outlook").href = links.outlook;
+  openModal("cal-modal");
+}
+
 function downloadICS(courses, filenamePrefix) {
   const valid = courses.filter(c => !c.status);
   if (valid.length === 0) {
@@ -1864,6 +2035,7 @@ $("btn-clear").addEventListener("click", () => {
   filters.topic.value = "";
   filters.credit.value = "";
   filters.hide.checked = false;
+  filters.crossYear.checked = false;
   render();
 });
 
@@ -1881,6 +2053,21 @@ $("lightbox").addEventListener("click", (e) => {
 });
 $("lightbox-close").addEventListener("click", (e) => { e.stopPropagation(); closeLightbox(); });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeLightbox(); });
+
+// 行事曆選單按鈕
+$("cal-ics").addEventListener("click", () => {
+  if (_calCourseRef) {
+    downloadICS([_calCourseRef]);
+    closeModal("cal-modal");
+    showToast("✓ 已下載 .ics 檔");
+  }
+});
+$("cal-google").addEventListener("click", () => {
+  setTimeout(() => { closeModal("cal-modal"); showToast("已開啟 Google 日曆"); }, 100);
+});
+$("cal-outlook").addEventListener("click", () => {
+  setTimeout(() => { closeModal("cal-modal"); showToast("已開啟 Outlook 日曆"); }, 100);
+});
 
 /* =========================================================
  * 管理者後台
