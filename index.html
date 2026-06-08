@@ -2130,6 +2130,42 @@ async function callApi(action, payload = {}) {
 async function loadFromSheet() {
   const data = await callApi("read");
   SCHEDULE = buildScheduleFromSheet(data);
+  saveScheduleCache(SCHEDULE);
+}
+
+/* 本地快取：讓第二次以後開啟網頁能瞬間顯示上次資料 */
+const CACHE_KEY = "lecture_schedule_cache_v1";
+const CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 天保險上限
+
+function loadScheduleCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    if (!obj || !obj.data || !obj.timestamp) return null;
+    if (Date.now() - obj.timestamp > CACHE_MAX_AGE_MS) return null;
+    return obj.data;
+  } catch (e) { return null; }
+}
+
+function saveScheduleCache(schedule) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({
+      data: schedule,
+      timestamp: Date.now()
+    }));
+  } catch (e) { /* 儲存失敗就算了 */ }
+}
+
+/* 背景更新：載入畫面已先用快取渲染後，靜默向 Sheet 取最新資料 */
+async function refreshFromSheetSilently() {
+  try {
+    await loadFromSheet();
+    render();
+    renderYearTabs();
+  } catch (e) {
+    console.warn("背景更新失敗 (保持快取資料):", e);
+  }
 }
 
 /* 將 Sheet 可能回傳的 ISO 日期字串或其他格式 → 正規化成 "M/D"
@@ -2823,28 +2859,49 @@ $("btn-autogen").addEventListener("click", async () => {
 (async function init() {
   // Sheet 模式 → 先從 Apps Script 撈資料
   if (USE_SHEET) {
-    showLoading("正在從 Google Sheet 載入課程資料…");
-    try {
-      await loadFromSheet();
-    } catch (e) {
-      console.error("Load from Sheet failed:", e);
-      showLoadError("無法載入 Sheet 資料：" + e.message +
-        "\n\n請檢查 APPS_SCRIPT_URL 是否正確、Apps Script 部署是否啟用。");
-      return;
-    }
-    // 若 session 有快取的 hash，嘗試自動登入
-    if (sessionPasswordHash) {
-      try {
-        await callApi("login", { passwordHash: sessionPasswordHash });
-        isAdmin = true;
-        document.body.classList.add("admin-mode");
-        $("admin-toolbar").classList.add("show");
-      } catch {
-        sessionStorage.removeItem("adminHash");
-        sessionPasswordHash = null;
+    const cached = loadScheduleCache();
+
+    if (cached) {
+      // 有快取 → 立即用快取資料渲染（無載入畫面），背景靜默更新
+      SCHEDULE = cached;
+      // 試圖自動登入（不阻塞渲染）
+      if (sessionPasswordHash) {
+        try {
+          await callApi("login", { passwordHash: sessionPasswordHash });
+          isAdmin = true;
+          document.body.classList.add("admin-mode");
+          $("admin-toolbar").classList.add("show");
+        } catch {
+          sessionStorage.removeItem("adminHash");
+          sessionPasswordHash = null;
+        }
       }
+      // 背景更新：渲染完成後再去拉新資料
+      setTimeout(refreshFromSheetSilently, 100);
+    } else {
+      // 沒快取（第一次造訪 / 清過 cache）→ 必須等網路
+      showLoading("正在從 Google Sheet 載入課程資料…");
+      try {
+        await loadFromSheet();
+      } catch (e) {
+        console.error("Load from Sheet failed:", e);
+        showLoadError("無法載入 Sheet 資料：" + e.message +
+          "\n\n請檢查 APPS_SCRIPT_URL 是否正確、Apps Script 部署是否啟用。");
+        return;
+      }
+      if (sessionPasswordHash) {
+        try {
+          await callApi("login", { passwordHash: sessionPasswordHash });
+          isAdmin = true;
+          document.body.classList.add("admin-mode");
+          $("admin-toolbar").classList.add("show");
+        } catch {
+          sessionStorage.removeItem("adminHash");
+          sessionPasswordHash = null;
+        }
+      }
+      hideLoading();
     }
-    hideLoading();
   }
 
   // 預設選擇本西元年對應的年度（若有）；否則選最新有資料的年度
