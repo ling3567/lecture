@@ -343,8 +343,8 @@ function autogenYear(year) {
 
   const rules = [
     { weekday: 5, nth: 1, label: "五" }, // 第一個星期五
-    { weekday: 3, nth: 2, label: "三" }, // 第二個星期三
-    { weekday: 2, nth: 3, label: "二" }  // 第三個星期二
+    { weekday: 2, nth: 2, label: "二" }, // 第二個星期二
+    { weekday: 3, nth: 3, label: "三" }  // 第三個星期三
   ];
   const courses = [];
   for (let m = 1; m <= 12; m++) {

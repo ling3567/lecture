@@ -1022,7 +1022,7 @@
       自動產出本年度預設排程
     </button>
     <div class="form-hint" id="autogen-hint" style="display:none; margin-top:8px">
-      依規則：每月「第一個星期五、第二個星期三、第三個星期二」自動建立 36 個待公告場次，可再逐場編輯。
+      依規則：每月「第一個星期五、第二個星期二、第三個星期三」自動建立 36 個待公告場次，可再逐場編輯。
     </div>
   </div>
   <div id="empty" class="empty-state" style="display:none">
@@ -2755,7 +2755,7 @@ function applyAutoTagDetect() {
 
 /* =========================================================
  * 自動產出年度排程
- * 規則：每月「第一個星期五」「第二個星期三」「第三個星期二」共 3 場 × 12 月 = 36 場
+ * 規則：每月「第一個星期五」「第二個星期二」「第三個星期三」共 3 場 × 12 月 = 36 場
  * ========================================================= */
 function nthWeekdayOfMonth(adYear, month, weekday, n) {
   // weekday: 0=Sun, 1=Mon, ..., 6=Sat
@@ -2770,8 +2770,8 @@ function generateDefaultSchedule(twYear) {
   const wkChar = "日一二三四五六";
   const rules = [
     { weekday: 5, nth: 1, label: "五" }, // 第一個星期五
-    { weekday: 3, nth: 2, label: "三" }, // 第二個星期三
-    { weekday: 2, nth: 3, label: "二" }  // 第三個星期二
+    { weekday: 2, nth: 2, label: "二" }, // 第二個星期二
+    { weekday: 3, nth: 3, label: "三" }  // 第三個星期三
   ];
   for (let m = 1; m <= 12; m++) {
     for (const r of rules) {
