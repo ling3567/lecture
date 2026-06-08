@@ -1677,7 +1677,7 @@ function buildPosterPlaceholder(c, extraNote) {
   return `<div class="spot-poster-placeholder">
     <div class="spot-ph-date">📅 ${c.date}（${c.weekday}）　07:30 – 08:30</div>
     <div class="spot-ph-topic">${escapeHtml(c.topic || '（主題待公告）')}</div>
-    <div class="spot-ph-speaker">${escapeHtml(c.speaker || '')}</div>
+    <div class="spot-ph-speaker">${escapeHtml(formatSpeaker(c.speaker))}</div>
     <div class="spot-ph-tag">${escapeHtml(extraNote || '海報製作中')}</div>
   </div>`;
 }
@@ -1788,7 +1788,7 @@ function buildCard(c, idx, showYear) {
   // 自動偵測假日時，隱藏原講者/主持/學分等資訊 (避免誤導讀者以為這場有開)
   if (!autoHoliday && (c.speaker || c.host || c.note)) {
     html += `<div class="course-info">`;
-    if (c.speaker) html += `<div class="info-item"><span class="info-label">主講｜</span><span class="info-value">${escapeHtml(c.speaker)}</span></div>`;
+    if (c.speaker) html += `<div class="info-item"><span class="info-label">主講｜</span><span class="info-value">${escapeHtml(formatSpeaker(c.speaker))}</span></div>`;
     if (c.host) html += `<div class="info-item"><span class="info-label">主持｜</span><span class="info-value">${escapeHtml(c.host)}</span></div>`;
     if (c.note && effectiveStatus !== "holiday") html += `<div class="info-item"><span class="info-label">備註｜</span><span class="info-value">${escapeHtml(c.note)}</span></div>`;
     html += `</div>`;
@@ -1966,7 +1966,7 @@ function buildVEvent(course, twYear) {
   const location = course.location || yr.location;
 
   const descLines = [];
-  if (course.speaker) descLines.push(`主講：${course.speaker}`);
+  if (course.speaker) descLines.push(`主講：${formatSpeaker(course.speaker)}`);
   if (course.host) descLines.push(`主持：${course.host}`);
   if (course.details && course.details.length) {
     descLines.push("");
@@ -1993,6 +1993,16 @@ function buildVEvent(course, twYear) {
     "END:VEVENT"
   ];
   return lines.map(foldLine).join("\r\n");
+}
+
+/* 將「姓名（單位）」格式轉為「姓名 / 單位」顯示 (僅顯示層轉換，不動原資料)
+ * 支援全形「（）」與半形「()」，多講者用「／」分隔的情境也正常處理
+ */
+function formatSpeaker(s) {
+  if (!s) return "";
+  return String(s)
+    .replace(/\s*（([^（）]+)）/g, " / $1")
+    .replace(/\s*\(([^()]+)\)/g, " / $1");
 }
 
 function escapeIcsText(s) {
@@ -2041,7 +2051,7 @@ function buildCalendarLinks(course, twYear) {
 
   const title = `全院演講｜${course.topic || "主題待公告"}`;
   const descLines = [];
-  if (course.speaker) descLines.push(`主講：${course.speaker}`);
+  if (course.speaker) descLines.push(`主講：${formatSpeaker(course.speaker)}`);
   if (course.host) descLines.push(`主持：${course.host}`);
   if (course.details && course.details.length) {
     descLines.push("");
@@ -2779,7 +2789,7 @@ function buildWordRow(c) {
   let html = `<tr>
     ${dateCell}
     <td class="topic-cell">${escapeHtml(c.topic || "")}${c.note ? `<br><span style="color:#666;font-size:9.5pt">備註：${escapeHtml(c.note)}</span>` : ""}</td>
-    <td>${escapeHtml(c.speaker || "").replace(/／|\//g, "<br>")}</td>
+    <td>${formatSpeaker(c.speaker || "").split(/／/).map(p => escapeHtml(p.trim())).join("<br>")}</td>
     <td>${escapeHtml(c.host || "").replace(/／|\//g, "<br>")}</td>
   </tr>`;
   // 學分明細列
