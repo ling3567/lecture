@@ -1766,9 +1766,13 @@ function buildCard(c, idx, showYear) {
   const [m, d] = c.date.split("/");
   const cardYear = c._year || currentYear;
 
-  // 偵測國定假日 (僅在沒有明確 status 時自動套用，會覆蓋顯示)
-  const autoHoliday = !c.status ? getHoliday(cardYear, c.date) : null;
-  const effectiveStatus = c.status || (autoHoliday ? "holiday" : "");
+  // 偵測國定假日：
+  //  - 無 status 或 status="tba" (autogen 骨架) 都會檢查
+  //  - 已明確標 cancelled/holiday 則尊重使用者意圖，不蓋過
+  const autoHoliday = (!c.status || c.status === "tba")
+    ? getHoliday(cardYear, c.date)
+    : null;
+  const effectiveStatus = autoHoliday ? "holiday" : (c.status || "");
   const autoHolidayNote = autoHoliday ? `適逢${autoHoliday}，暫停乙次` : "";
 
   const cls = ["course-card"];
@@ -1900,6 +1904,10 @@ function matches(c) {
 let filteredCache = [];
 function render() {
   const yr = SCHEDULE[currentYear];
+  // 每次 render 都同步年度 meta (背景靜默更新後也會自動反映新的 updated 日期)
+  if (yr) {
+    $("meta-updated").textContent = `更新日期：${yr.updated || "—"}`;
+  }
   // 公開頁：若該年度只剩 skeleton 也視為「尚未公告」，避免畫面被空殼塞滿
   const hasData = isAdmin
     ? (yr.courses && yr.courses.length > 0)
