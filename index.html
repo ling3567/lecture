@@ -191,7 +191,8 @@
   }
   .spot-poster-img {
     width: 100%; height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    background: #fff;
     display: block; cursor: zoom-in;
     transition: transform 0.35s;
   }
@@ -1874,8 +1875,9 @@ function matches(c) {
   // 自動產出的骨架場次 (尚未編輯內容) 僅在管理者模式顯示
   if (c._skeleton && !isAdmin) return false;
   if (filters.hide.checked && c.status) return false;
-  // 預設隱藏「當年的過去場次」(過去年度本身就是看歷史用，不該隱藏)
-  if (hidePastLectures) {
+  // 預設隱藏「當年的已結束場次」(過去年度本身就是看歷史用，不該隱藏)
+  // 但只要使用者輸入任何篩選條件 → 自動顯示已結束場次 (以免找不到資料)
+  if (hidePastLectures && !isAnyFilterActive()) {
     const cardYear = c._year || currentYear;
     const yrData = SCHEDULE[cardYear];
     if (yrData && yrData.adYear === TODAY_AD_YEAR) {
@@ -2205,20 +2207,31 @@ $("btn-clear").addEventListener("click", () => {
   render();
 });
 
-/* 過去場次展開鈕 */
+/* 是否處於搜尋模式 (任一篩選條件啟用) */
+function isAnyFilterActive() {
+  return !!(filters.month.value
+         || filters.speaker.value.trim()
+         || filters.topic.value.trim()
+         || filters.credit.value);
+}
+
+/* 已結束場次展開鈕 */
 function updatePastToggle(pastCount) {
   const wrap = $("past-toggle");
-  if (pastCount === 0) { wrap.style.display = "none"; return; }
+  const hint = $("past-toggle-hint");
+  // 搜尋模式下自動顯示已結束場次，不需要按鈕
+  if (isAnyFilterActive() || pastCount === 0) {
+    wrap.style.display = "none";
+    return;
+  }
   wrap.style.display = "block";
   const btn = $("btn-past-toggle");
-  const hint = $("past-toggle-hint");
   if (hidePastLectures) {
-    btn.innerHTML = `▾ 顯示過去 <strong>${pastCount}</strong> 場`;
-    hint.textContent = "（用於補學分紀錄或確認出席）";
+    btn.innerHTML = `▾ 顯示已結束場次（<strong>${pastCount}</strong> 場）`;
   } else {
-    btn.innerHTML = `▴ 收合過去場次`;
-    hint.textContent = "";
+    btn.innerHTML = `▴ 收合已結束場次`;
   }
+  hint.textContent = "";
 }
 $("btn-past-toggle").addEventListener("click", () => {
   hidePastLectures = !hidePastLectures;
