@@ -794,15 +794,30 @@
     border: 1.5px dashed var(--gray-200); border-radius: 8px;
   }
   .poster-preview-box {
-    width: 88px; height: 124px;
+    width: 140px; min-height: 100px;
     background: #fff;
     border: 1px solid var(--gray-200); border-radius: 6px;
     overflow: hidden;
     display: flex; align-items: center; justify-content: center;
     color: var(--gray-300); flex-shrink: 0;
+    cursor: zoom-in;
+    position: relative;
   }
-  .poster-preview-box img { width: 100%; height: 100%; object-fit: cover; }
+  .poster-preview-box img {
+    width: 100%; height: auto; display: block;
+  }
   .poster-preview-box svg { width: 32px; height: 32px; }
+  .poster-preview-box::after {
+    content: "🔍 Spotlight 預覽 (點放大)";
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.6); color: #fff;
+    font-size: 10px; padding: 4px;
+    text-align: center; letter-spacing: 0.3px;
+    opacity: 0; transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .poster-preview-box:hover::after { opacity: 1; }
+  .poster-preview-box.has-img { border-color: var(--accent); border-width: 2px; }
   .poster-info { flex: 1; display: flex; flex-direction: column; gap: 6px; }
   .poster-path {
     font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
@@ -866,6 +881,9 @@
   .btn-card-edit:hover { background: var(--primary); color: #fff; }
   .btn-card-del { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
   .btn-card-del:hover { background: #dc2626; color: #fff; }
+  .btn-card-preview { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+  .btn-card-preview:hover { background: #d97706; color: #fff; border-color: #d97706; }
+  .btn-card-preview:disabled:hover { background: #fef3c7; color: #92400e; }
 
   body.admin-mode { padding-bottom: 80px; }
 
@@ -1863,8 +1881,13 @@ function buildCard(c, idx, showYear) {
   }
 
   if (isAdmin) {
+    const previewSrc = c._previewPoster || c.poster;
+    const previewBtn = previewSrc
+      ? `<button class="btn-card-mini btn-card-preview" data-preview-idx="${idx}">🖼️ 預覽海報</button>`
+      : `<button class="btn-card-mini btn-card-preview" disabled style="opacity:0.45;cursor:not-allowed">未上傳海報</button>`;
     html += `<div class="card-admin-actions">
       <button class="btn-card-mini btn-card-edit" data-edit-idx="${idx}">編輯</button>
+      ${previewBtn}
       <button class="btn-card-mini btn-card-del" data-del-idx="${idx}">刪除</button>
     </div>`;
   }
@@ -1999,6 +2022,15 @@ function render() {
         const c = filteredCache[idx];
         const realIdx = SCHEDULE[currentYear].courses.indexOf(c);
         deleteCourse(currentYear, realIdx);
+      });
+    });
+    // 預覽海報 → 用 Lightbox 全螢幕放大 (含縮放)，不受日期限制
+    listEl.querySelectorAll("[data-preview-idx]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const idx = Number(btn.dataset.previewIdx);
+        const c = filteredCache[idx];
+        const src = c._previewPoster || c.poster;
+        if (src) openLightbox(src, `${c.date} ${c.topic || ""} 海報預覽`);
       });
     });
   }
@@ -2610,10 +2642,20 @@ function renderEditorPoster(src) {
   const box = $("ed-poster-preview-box");
   if (src) {
     box.innerHTML = `<img src="${escapeHtml(src)}" alt="海報預覽" />`;
+    box.classList.add("has-img");
+    box.dataset.previewSrc = src;
   } else {
     box.innerHTML = `<svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>`;
+    box.classList.remove("has-img");
+    delete box.dataset.previewSrc;
   }
 }
+
+// 點編輯表單裡的小預覽 → 用 Lightbox 全螢幕放大檢視 (含縮放)
+$("ed-poster-preview-box").addEventListener("click", () => {
+  const src = $("ed-poster-preview-box").dataset.previewSrc;
+  if (src) openLightbox(src, "海報預覽");
+});
 
 function renderTagCheckboxes(selectedTags) {
   const wrap = $("ed-tags");
