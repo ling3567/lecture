@@ -258,7 +258,7 @@
   .lightbox {
     position: fixed; inset: 0;
     background: rgba(0,0,0,0.92);
-    z-index: 1000;
+    z-index: 1200;   /* 高於 modal (1100)，才能從編輯視窗點預覽時蓋過編輯框 */
     opacity: 0; visibility: hidden;
     transition: opacity 0.2s, visibility 0.2s;
     display: flex; cursor: zoom-out;
