@@ -1791,10 +1791,8 @@ function buildCard(c, idx, showYear) {
   if (effectiveStatus) cls.push(`status-${effectiveStatus}`);
 
   // 「即將到來」: 從今天起 14 天內，且非任何狀態
-  const isSoon = !effectiveStatus && (() => {
-    const dd = daysUntil(cardYear, c.date);
-    return dd >= 0 && dd <= 14;
-  })();
+  const daysToCourse = daysUntil(cardYear, c.date);
+  const isSoon = !effectiveStatus && daysToCourse >= 0 && daysToCourse <= 14;
   if (isSoon) cls.push("is-upcoming");
 
   // 過去場次：當年但已過去的，淡色顯示
@@ -1822,7 +1820,16 @@ function buildCard(c, idx, showYear) {
     topic = c.topic || "";
   }
 
-  const soonBadge = isSoon ? '<span class="status-badge badge-current">即將到來</span>' : '';
+  // 徽章用詞依倒數調整：今天 / 明天 / 後天 / 即將到來
+  let soonBadge = '';
+  if (isSoon) {
+    let soonText;
+    if (daysToCourse === 0) soonText = "今天";
+    else if (daysToCourse === 1) soonText = "明天";
+    else if (daysToCourse === 2) soonText = "後天";
+    else soonText = "即將到來";
+    soonBadge = `<span class="status-badge badge-current">${soonText}</span>`;
+  }
   const yearBadge = showYear ? `<span class="badge-year">${cardYear} 年</span>` : '';
 
   let html = `<div class="${cls.join(" ")}">
