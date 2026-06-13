@@ -8,7 +8,7 @@
  *   並寫入一筆預設管理者 (admin / chimei2026)。
  */
 
-const SHEET_NAMES = { YEARS: "Years", COURSES: "Courses", AUTH: "Auth" };
+const SHEET_NAMES = { YEARS: "Years", COURSES: "Courses", AUTH: "Auth", TAGS: "Tags" };
 
 const SCHEMAS = {
   [SHEET_NAMES.YEARS]: {
@@ -32,6 +32,57 @@ const SCHEMAS = {
     defaultRows: [
       // 預設密碼 chimei2026 的 SHA-256 雜湊 — 強烈建議首次登入後立即更換
       ["admin", "da4c31ae5a3b30d9774a2c2eafac5d725d25abe4e18f6e35bc452d428ea3618c", "管理者"]
+    ]
+  },
+  /* Tags 工作表：學分類別資料
+   * 欄位：
+   *   id     — 標籤識別 (儲存在 Courses.tags 欄位裡的值)
+   *   group  — 顯示分組 (繼續教育學分 / 臨床教師認證 / CFD 點數 / 員工教育訓練 / 主管培育)
+   *   label  — 顯示文字覆蓋 (留空 = 用 id；常用於臨教加 CFD 前綴)
+   *   hints  — 學分明細偵測關鍵字 (用「|」分隔)，含「臨床教師認證」且包含其一就套 CFD 前綴
+   *   hidden — yes = 不在卡片以彩色標籤顯示 (僅用於 CFD 點數欄位)
+   * 列順序即顯示順序。新增類別只要在此工作表加新列。
+   */
+  [SHEET_NAMES.TAGS]: {
+    headers: ["id","group","label","hints","hidden"],
+    defaultRows: [
+      // 繼續教育學分 (4)
+      ["專業",       "繼續教育學分", "", "", ""],
+      ["品質",       "繼續教育學分", "", "", ""],
+      ["倫理",       "繼續教育學分", "", "", ""],
+      ["性別",       "繼續教育學分", "", "", ""],
+      // 臨床教師認證 (14)
+      ["六大核心",   "臨床教師認證", "CFD B類六大核心", "六大核心|B 類|B類", ""],
+      ["進階",       "臨床教師認證", "CFD 進階",         "進階", ""],
+      ["生理",       "臨床教師認證", "CFD Aa類生理",     "生理", ""],
+      ["健康促進",   "臨床教師認證", "CFD Ab類健康促進", "健康促進", ""],
+      ["疾病預防",   "臨床教師認證", "CFD Ab類疾病預防", "疾病預防", ""],
+      ["心理",       "臨床教師認證", "CFD Ab類心理",     "心理", ""],
+      ["醫學人文",   "臨床教師認證", "CFD Ac類醫學人文", "醫學人文", ""],
+      ["敘事醫學",   "臨床教師認證", "CFD Ac類敘事醫學", "敘事醫學", ""],
+      ["安寧",       "臨床教師認證", "CFD Ad類安寧",     "安寧", ""],
+      ["社會、長照", "臨床教師認證", "CFD Ad類社會長照", "社會、長照|社會", ""],
+      ["長照",       "臨床教師認證", "CFD Ad類長照",     "長照", ""],
+      ["教學技巧",   "臨床教師認證", "CFD C類教學技巧",  "教學技巧", ""],
+      ["數位賦能",   "臨床教師認證", "CFD C類數位賦能",  "數位賦能", ""],
+      ["倫理及法律", "臨床教師認證", "CFD D類倫理及法律","倫理及法律|倫理與法律", ""],
+      // CFD 點數 (2 — 隱藏標籤)
+      ["CFD 核心",   "CFD 點數", "", "", "yes"],
+      ["CFD 一般",   "CFD 點數", "", "", "yes"],
+      // 員工教育訓練 (10)
+      ["醫學倫理",   "員工教育訓練", "", "", ""],
+      ["全人醫療",   "員工教育訓練", "", "", ""],
+      ["醫療品質",   "員工教育訓練", "", "", ""],
+      ["緩和醫療",   "員工教育訓練", "", "", ""],
+      ["健康識能",   "員工教育訓練", "", "", ""],
+      ["醫療相關法規","員工教育訓練", "", "", ""],
+      ["資訊安全",   "員工教育訓練", "", "", ""],
+      ["病人權利",   "員工教育訓練", "", "", ""],
+      ["危機管理",   "員工教育訓練", "", "", ""],
+      ["品質管理",   "員工教育訓練", "", "", ""],
+      // 主管培育 (2)
+      ["領導統御",   "主管培育", "", "", ""],
+      ["行政管理與危機處理", "主管培育", "", "", ""]
     ]
   }
 };
@@ -209,7 +260,8 @@ function readAll() {
   const courses = sheetToObjects(ss.getSheetByName(SHEET_NAMES.COURSES));
   const auth    = sheetToObjects(ss.getSheetByName(SHEET_NAMES.AUTH))
                     .map(r => ({ username: r.username, displayName: r.displayName || "" }));
-  return { years, courses, auth };
+  const tags    = sheetToObjects(ss.getSheetByName(SHEET_NAMES.TAGS));
+  return { years, courses, auth, tags };
 }
 
 function sheetToObjects(sheet) {
@@ -299,6 +351,7 @@ function saveCourse(course) {
     const idx = ids.findIndex(v => String(v) === String(course.id));
     if (idx === -1) throw new Error("找不到 id: " + course.id);
     sheet.getRange(idx + 2, 1, 1, headers.length).setValues([row]);
+    updateYearTimestamp_(course.year);
     return course;
   } else {
     const ids = lastRow >= 2 ? sheet.getRange(2, 1, lastRow - 1, 1).getValues().flat() : [];
@@ -307,7 +360,32 @@ function saveCourse(course) {
     course.id = newId;
     row[headers.indexOf("id")] = newId;
     sheet.appendRow(row);
+    updateYearTimestamp_(course.year);
     return course;
+  }
+}
+
+/* 自動更新年度的「更新日期」欄位為今天 (民國年.MM.DD) */
+function updateYearTimestamp_(year) {
+  if (!year) return;
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_NAMES.YEARS);
+  if (!sheet) return;
+  const data = sheet.getDataRange().getValues();
+  if (data.length < 2) return;
+  const headers = data[0].map(h => String(h).trim());
+  const yearCol = headers.indexOf("year");
+  const updatedCol = headers.indexOf("updated");
+  if (yearCol === -1 || updatedCol === -1) return;
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][yearCol]) === String(year)) {
+      const now = new Date();
+      const tw = now.getFullYear() - 1911;
+      const dateStr = tw + "." + String(now.getMonth() + 1).padStart(2, "0") + "." + String(now.getDate()).padStart(2, "0");
+      sheet.getRange(i + 1, updatedCol + 1).setValue(dateStr);
+      sheet.getRange(i + 1, updatedCol + 1).setNumberFormat("@");
+      return;
+    }
   }
 }
 
@@ -323,10 +401,14 @@ function deleteCourse(id) {
   const sheet = ss.getSheetByName(SHEET_NAMES.COURSES);
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) throw new Error("沒有資料可刪除");
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(h => String(h).trim());
+  const yearCol = headers.indexOf("year");
   const ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues().flat();
   const idx = ids.findIndex(v => String(v) === String(id));
   if (idx === -1) throw new Error("找不到 id: " + id);
+  const year = yearCol !== -1 ? sheet.getRange(idx + 2, yearCol + 1).getValue() : null;
   sheet.deleteRow(idx + 2);
+  if (year) updateYearTimestamp_(year);
   return { id };
 }
 
@@ -365,6 +447,7 @@ function autogenYear(year) {
     return headers.map(h => toCellValue(c[h]));
   });
   if (rows.length) sheet.getRange(lastRow + 1, 1, rows.length, headers.length).setValues(rows);
+  updateYearTimestamp_(year);
   return { count: rows.length };
 }
 

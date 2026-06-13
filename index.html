@@ -1054,39 +1054,8 @@
       <div class="filter-field">
         <label for="f-credit">學分類別</label>
         <select id="f-credit">
+          <!-- 選項由 populateCreditFilter() 在 init 時依 ADMIN_TAG_GROUPS 動態建立 -->
           <option value="">全部學分</option>
-          <option value="專業">繼續教育 — 專業</option>
-          <option value="品質">繼續教育 — 品質</option>
-          <option value="倫理">繼續教育 — 倫理</option>
-          <option value="性別">繼續教育 — 倫理／性別</option>
-          <option value="六大核心">CFD B類六大核心</option>
-          <option value="進階">CFD 進階</option>
-          <option value="生理">CFD Aa類生理</option>
-          <option value="健康促進">CFD Ab類健康促進</option>
-          <option value="疾病預防">CFD Ab類疾病預防</option>
-          <option value="心理">CFD Ab類心理</option>
-          <option value="醫學人文">CFD Ac類醫學人文</option>
-          <option value="敘事醫學">CFD Ac類敘事醫學</option>
-          <option value="安寧">CFD Ad類安寧</option>
-          <option value="社會、長照">CFD Ad類社會長照</option>
-          <option value="長照">CFD Ad類長照</option>
-          <option value="教學技巧">CFD C類教學技巧</option>
-          <option value="數位賦能">CFD C類數位賦能</option>
-          <option value="倫理及法律">CFD D類倫理及法律</option>
-          <option value="CFD 核心">CFD 核心課程（點數）</option>
-          <option value="CFD 一般">CFD 一般課程（點數）</option>
-          <option value="醫學倫理">員工 — 醫學倫理</option>
-          <option value="全人醫療">員工 — 全人醫療</option>
-          <option value="醫療品質">員工 — 醫療品質</option>
-          <option value="緩和醫療">員工 — 緩和醫療</option>
-          <option value="健康識能">員工 — 健康識能</option>
-          <option value="醫療相關法規">員工 — 醫療相關法規</option>
-          <option value="資訊安全">員工 — 資訊安全</option>
-          <option value="病人權利">員工 — 病人權利</option>
-          <option value="危機管理">員工 — 危機管理</option>
-          <option value="品質管理">員工 — 品質管理</option>
-          <option value="領導統御">主管培育 — 領導統御</option>
-          <option value="行政管理與危機處理">主管培育 — 行政管理與危機處理</option>
         </select>
       </div>
     </div>
@@ -1482,7 +1451,8 @@ let SCHEDULE = {
  * - 臨床教師認證類別 → 顯示為 "CFD ..." 前綴
  * - CFD 核心 / 一般點數不顯示為按鈕（仍可被查詢條件搜尋）
  */
-const TAG_LABEL = {
+/* 學分類別 — 預設值；若 Google Sheet 有 Tags 工作表，會被 buildTagsFromSheet 覆蓋 */
+let TAG_LABEL = {
   "六大核心":   "CFD B類六大核心",
   "進階":       "CFD 進階",
   "生理":       "CFD Aa類生理",
@@ -1498,14 +1468,10 @@ const TAG_LABEL = {
   "數位賦能":   "CFD C類數位賦能",
   "倫理及法律": "CFD D類倫理及法律"
 };
-const TAG_HIDDEN = new Set(["CFD 核心", "CFD 一般"]);
+let TAG_HIDDEN = new Set(["CFD 核心", "CFD 一般"]);
 
-/* 判斷標籤是否來自「臨床教師認證」(才標 CFD 前綴)。
- * 規則：course.details 內必須有以「臨床教師認證」開頭/包含的行，且該行同時提到
- *       此標籤的關鍵字（如「六大核心」、「B 類」、「數位賦能」…）才視為臨教學分。
- * 例如 4/25 課程只有「員工教育訓練『數位賦能』1 學分」，不應顯示為 CFD 學分。
- */
-const FACULTY_CERT_HINTS = {
+/* 判斷標籤是否來自「臨床教師認證」(才標 CFD 前綴)。 */
+let FACULTY_CERT_HINTS = {
   "六大核心":   ["六大核心", "B 類", "B類"],
   "進階":       ["進階"],
   "生理":       ["生理"],
@@ -2397,7 +2363,8 @@ async function callApi(action, payload = {}) {
 async function loadFromSheet() {
   const data = await callApi("read");
   SCHEDULE = buildScheduleFromSheet(data);
-  saveScheduleCache(SCHEDULE);
+  if (data && Array.isArray(data.tags)) buildTagsFromSheet(data.tags);
+  saveScheduleCache(SCHEDULE, data && data.tags);
 }
 
 /* 本地快取：讓第二次以後開啟網頁能瞬間顯示上次資料 */
@@ -2411,14 +2378,15 @@ function loadScheduleCache() {
     const obj = JSON.parse(raw);
     if (!obj || !obj.data || !obj.timestamp) return null;
     if (Date.now() - obj.timestamp > CACHE_MAX_AGE_MS) return null;
-    return obj.data;
+    return { schedule: obj.data, tags: obj.tags || null };
   } catch (e) { return null; }
 }
 
-function saveScheduleCache(schedule) {
+function saveScheduleCache(schedule, tags) {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify({
       data: schedule,
+      tags: tags || null,
       timestamp: Date.now()
     }));
   } catch (e) { /* 儲存失敗就算了 */ }
@@ -2511,7 +2479,8 @@ function showLoadError(msg) {
     `<button class="btn-form btn-form-primary" onclick="location.reload()">重新整理</button>`;
 }
 
-const ADMIN_TAG_GROUPS = [
+/* 編輯表單裡的學分類別分組 — 預設值；buildTagsFromSheet 會覆蓋 */
+let ADMIN_TAG_GROUPS = [
   { label: "繼續教育學分", tags: ["專業","品質","倫理","性別"] },
   { label: "臨床教師認證", tags: ["生理","健康促進","疾病預防","心理","醫學人文","敘事醫學","安寧","社會、長照","長照","六大核心","進階","教學技巧","數位賦能","倫理及法律"] },
   { label: "CFD 點數", tags: ["CFD 核心","CFD 一般"] },
@@ -3005,7 +2974,8 @@ function getHoliday(twYear, dateStr) {
   return table[`${m}/${d}`] || table[`${m}/${String(d).padStart(2,"0")}`] || null;
 }
 
-const KNOWN_TAGS_SET = new Set([
+/* 學分明細自動勾選用的標籤總集 — 預設值；buildTagsFromSheet 會覆蓋 */
+let KNOWN_TAGS_SET = new Set([
   "專業","品質","倫理","性別",
   "生理","健康促進","疾病預防","心理","醫學人文","敘事醫學",
   "安寧","社會、長照","長照","六大核心","進階","教學技巧","數位賦能","倫理及法律",
@@ -3014,6 +2984,66 @@ const KNOWN_TAGS_SET = new Set([
   "資訊安全","病人權利","危機管理","品質管理",
   "領導統御","行政管理與危機處理"
 ]);
+
+/* =========================================================
+ * 從 Google Sheet 的 Tags 工作表動態載入學分類別
+ * 結構：[{ id, group, label, hints, hidden }, ...]
+ * 載入後會「全部覆蓋」TAG_LABEL / TAG_HIDDEN / FACULTY_CERT_HINTS /
+ * KNOWN_TAGS_SET / ADMIN_TAG_GROUPS / 篩選下拉選項
+ * 若 Sheet 內容為空或載入失敗，沿用本檔的預設值
+ * ========================================================= */
+function buildTagsFromSheet(rows) {
+  if (!rows || !Array.isArray(rows) || rows.length === 0) return;
+  const newLabel = {};
+  const newHidden = new Set();
+  const newHints = {};
+  const newKnown = new Set();
+  const groupOrder = [];
+  const groupMap = {};
+
+  for (const row of rows) {
+    const id = String(row.id || "").trim();
+    if (!id) continue;
+    const group = String(row.group || "其他").trim();
+    const label = String(row.label || "").trim();
+    const hints = String(row.hints || "").trim();
+    const hidden = String(row.hidden || "").toLowerCase().trim();
+
+    newKnown.add(id);
+    if (hidden === "yes" || hidden === "true" || hidden === "1") newHidden.add(id);
+    if (label) newLabel[id] = label;
+    if (hints) newHints[id] = hints.split(/[|｜,，]/).map(s => s.trim()).filter(Boolean);
+
+    if (!groupMap[group]) {
+      groupMap[group] = { label: group, tags: [] };
+      groupOrder.push(group);
+    }
+    groupMap[group].tags.push(id);
+  }
+
+  TAG_LABEL = newLabel;
+  TAG_HIDDEN = newHidden;
+  FACULTY_CERT_HINTS = newHints;
+  KNOWN_TAGS_SET = newKnown;
+  ADMIN_TAG_GROUPS = groupOrder.map(g => groupMap[g]);
+  populateCreditFilter();
+}
+
+/* 依 ADMIN_TAG_GROUPS / TAG_LABEL 動態重建篩選下拉選單 */
+function populateCreditFilter() {
+  const sel = $("f-credit");
+  if (!sel) return;
+  const prevValue = sel.value;
+  let html = '<option value="">全部學分</option>';
+  for (const group of ADMIN_TAG_GROUPS) {
+    for (const id of group.tags) {
+      const display = TAG_LABEL[id] || id;
+      html += `<option value="${escapeHtml(id)}">${escapeHtml(display)}</option>`;
+    }
+  }
+  sel.innerHTML = html;
+  if (prevValue) sel.value = prevValue;
+}
 
 function detectTagsFromDetails(text) {
   const found = new Set();
@@ -3134,13 +3164,17 @@ $("btn-autogen").addEventListener("click", async () => {
  * 啟動
  * ========================================================= */
 (async function init() {
+  // 先依預設值建立篩選下拉 (Sheet 載入後若有 Tags 工作表會覆蓋)
+  populateCreditFilter();
+
   // Sheet 模式 → 先從 Apps Script 撈資料
   if (USE_SHEET) {
     const cached = loadScheduleCache();
 
     if (cached) {
       // 有快取 → 立即用快取資料渲染（無載入畫面），背景靜默更新
-      SCHEDULE = cached;
+      SCHEDULE = cached.schedule;
+      if (cached.tags) buildTagsFromSheet(cached.tags);
       // 試圖自動登入（不阻塞渲染）
       if (sessionPasswordHash) {
         try {
