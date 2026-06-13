@@ -598,6 +598,41 @@
     padding: 2px 10px;
   }
 
+  /* 過去場次淡色樣式 */
+  .course-card.is-past {
+    opacity: 0.62;
+    background: #fafaf9;
+    transition: opacity 0.2s;
+  }
+  .course-card.is-past:hover { opacity: 1; }
+
+  /* 過去場次展開鈕 */
+  .past-toggle {
+    text-align: center;
+    margin: 28px auto 40px;
+  }
+  .past-toggle button {
+    background: rgba(0,0,0,0.04);
+    color: var(--gray-500);
+    border: 1px dashed var(--gray-300);
+    padding: 10px 24px;
+    border-radius: 24px;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer; font-family: inherit;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: all 0.2s;
+  }
+  .past-toggle button:hover {
+    background: rgba(0,0,0,0.08);
+    color: var(--primary);
+    border-color: var(--primary-light);
+    border-style: solid;
+  }
+  .past-toggle-hint {
+    font-size: 11.5px; color: var(--gray-500);
+    margin-top: 8px; opacity: 0.7;
+  }
+
   /* Empty state */
   .empty-state {
     text-align: center; padding: 60px 20px;
@@ -1058,6 +1093,10 @@
   </div>
 
   <div id="course-list" class="course-list"></div>
+  <div id="past-toggle" class="past-toggle" style="display:none">
+    <button id="btn-past-toggle" type="button"></button>
+    <div class="past-toggle-hint" id="past-toggle-hint"></div>
+  </div>
   <div id="year-placeholder" class="year-placeholder" style="display:none">
     <h3 id="placeholder-title">本年度尚未公告</h3>
     <p id="placeholder-text">課程資訊將陸續公布，敬請期待。</p>
@@ -1480,6 +1519,7 @@ let currentYear = null;
 let isAdmin = false;
 let editCtx = null;            // 編輯中的課程：{ year, idx, isNew }
 let pendingPosterUpload = null; // 待下載的海報檔 { filename, dataUri, file }
+let hidePastLectures = true;    // 預設隱藏「當年已過去」的場次，使用者可點底部按鈕展開
 
 /* =========================================================
  * 工具
@@ -1754,6 +1794,12 @@ function buildCard(c, idx, showYear) {
   })();
   if (isSoon) cls.push("is-upcoming");
 
+  // 過去場次：當年但已過去的，淡色顯示
+  const yrDataForCard = SCHEDULE[cardYear];
+  const isPast = !effectiveStatus && yrDataForCard && yrDataForCard.adYear === TODAY_AD_YEAR
+                  && daysUntil(cardYear, c.date) < 0;
+  if (isPast) cls.push("is-past");
+
   // 主題顯示優先序：
   //   1. 自動偵測假日 → 強制顯示「適逢X，暫停乙次」(覆蓋原講題)
   //   2. 明確標 cancelled → 保留原講題以利溯及，CSS 加刪除線
@@ -1828,6 +1874,14 @@ function matches(c) {
   // 自動產出的骨架場次 (尚未編輯內容) 僅在管理者模式顯示
   if (c._skeleton && !isAdmin) return false;
   if (filters.hide.checked && c.status) return false;
+  // 預設隱藏「當年的過去場次」(過去年度本身就是看歷史用，不該隱藏)
+  if (hidePastLectures) {
+    const cardYear = c._year || currentYear;
+    const yrData = SCHEDULE[cardYear];
+    if (yrData && yrData.adYear === TODAY_AD_YEAR) {
+      if (daysUntil(cardYear, c.date) < 0) return false;
+    }
+  }
   const month = filters.month.value;
   if (month && parseInt(c.date.split("/")[0], 10) !== parseInt(month, 10)) return false;
   const sp = filters.speaker.value.trim().toLowerCase();
@@ -1898,6 +1952,17 @@ function render() {
   listEl.innerHTML = filteredCache.map((c, i) => buildCard(c, i, isCross)).join("");
   countEl.textContent = filteredCache.length;
   emptyEl.style.display = filteredCache.length === 0 ? "block" : "none";
+
+  // 計算「當年的過去場次」數量，決定底部展開鈕的顯示
+  const pastCount = pool.filter(c => {
+    if (c._skeleton && !isAdmin) return false;
+    if (c.status) return false;  // 已取消/休假/待定不算
+    const cardYear = c._year || currentYear;
+    const yrData = SCHEDULE[cardYear];
+    if (!yrData || yrData.adYear !== TODAY_AD_YEAR) return false;
+    return daysUntil(cardYear, c.date) < 0;
+  }).length;
+  updatePastToggle(pastCount);
 
   listEl.querySelectorAll("[data-card-idx]").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -2136,7 +2201,33 @@ $("btn-clear").addEventListener("click", () => {
   filters.credit.value = "";
   filters.hide.checked = false;
   filters.crossYear.checked = false;
+  hidePastLectures = true;
   render();
+});
+
+/* 過去場次展開鈕 */
+function updatePastToggle(pastCount) {
+  const wrap = $("past-toggle");
+  if (pastCount === 0) { wrap.style.display = "none"; return; }
+  wrap.style.display = "block";
+  const btn = $("btn-past-toggle");
+  const hint = $("past-toggle-hint");
+  if (hidePastLectures) {
+    btn.innerHTML = `▾ 顯示過去 <strong>${pastCount}</strong> 場`;
+    hint.textContent = "（用於補學分紀錄或確認出席）";
+  } else {
+    btn.innerHTML = `▴ 收合過去場次`;
+    hint.textContent = "";
+  }
+}
+$("btn-past-toggle").addEventListener("click", () => {
+  hidePastLectures = !hidePastLectures;
+  render();
+  // 展開時平滑捲動到剛剛點按鈕的位置上方一點
+  if (!hidePastLectures) {
+    const wrap = $("past-toggle");
+    setTimeout(() => wrap.scrollIntoView({ behavior: "smooth", block: "nearest" }), 50);
+  }
 });
 
 $("btn-batch").addEventListener("click", () => {
