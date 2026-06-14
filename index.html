@@ -42,79 +42,85 @@
   }
   .container { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
 
-  /* Header — 主色保留奇美品牌青綠，但右下加暖晨光，避免「陰森」感 */
+  /* Header — 晨光天空漸層：上方青綠夜空 → 中段過渡 → 下方暖夕陽
+     模擬清晨日出的天空色階，建築正好位於暖色「地平線」上 */
   header {
-    background: linear-gradient(135deg, #0d7d92 0%, #064b58 100%);
+    background: linear-gradient(180deg,
+      #0d7d92 0%,        /* 天頂青綠 */
+      #1a8fa3 28%,
+      #4ba8b3 55%,
+      #d8a578 82%,       /* 地平線暖橘 */
+      #e8b889 100%);     /* 底部暖光 */
     color: #fff;
-    padding: 40px 0 120px;
+    padding: 40px 0 130px;
     position: relative;
     overflow: hidden;
   }
-  /* 右下「晨光」橘黃漸層 — 讓建築看起來像被晨光照亮 */
+  /* 右下太陽光暈 — 強化「晨光照亮建築」的方向感 */
   header::before {
     content: ""; position: absolute;
     top: 0; right: 0; bottom: 0; width: 70%;
     background:
-      radial-gradient(ellipse at 80% 100%,
-        rgba(255, 210, 145, 0.22) 0%,
-        rgba(255, 200, 130, 0.08) 35%,
-        transparent 65%);
+      radial-gradient(ellipse 60% 80% at 75% 95%,
+        rgba(255, 230, 180, 0.42) 0%,
+        rgba(255, 210, 150, 0.18) 35%,
+        transparent 70%);
     pointer-events: none; z-index: 0;
   }
-  /* 左下橘色點綴 (保留原本) */
+  /* 左上微微星辰高光 (取代原來左下橘) */
   header::after {
-    content: ""; position: absolute; bottom: -100px; left: -50px;
-    width: 250px; height: 250px;
-    background: radial-gradient(circle, rgba(217,119,87,0.12) 0%, transparent 70%);
+    content: ""; position: absolute; top: -50px; left: -50px;
+    width: 320px; height: 320px;
+    background: radial-gradient(circle, rgba(255,255,255,0.07) 0%, transparent 65%);
     border-radius: 50%; z-index: 0;
   }
   .header-content { position: relative; z-index: 3; }
 
-  /* 奇美醫院建築 - 右側天際線，自然色不再陰森 */
+  /* 奇美醫院建築 - 右側建築群，自然採光感 */
   .hero-buildings {
     position: absolute;
     bottom: 0; right: 0;
-    width: 62%;
-    max-width: 820px;
+    width: 64%;
+    max-width: 860px;
     height: auto;
-    max-height: 280px;
+    max-height: 300px;
     object-fit: cover;
     object-position: bottom right;
-    opacity: 0.6;
+    opacity: 0.78;            /* 提高 → 建築清晰，背景已是暖色不會搶戲 */
     pointer-events: none;
     z-index: 1;
-    /* 提亮 + 保留些許飽和 + 微暖色調，呈現「晨光建築」感 */
-    filter: brightness(1.18) saturate(0.78) contrast(0.95) sepia(0.08);
-    /* 左邊完全透明 → 右邊清晰，避免建築壓到主標題區 */
+    /* 提亮 + 保留飽和 + 微暖調 → 真實晨光照射感 */
+    filter: brightness(1.08) saturate(0.92) contrast(1.0) sepia(0.06);
+    /* 左邊完全透明 → 右邊清晰，主標題區乾淨 */
     -webkit-mask-image: linear-gradient(to right,
                           transparent 0%,
-                          rgba(0,0,0,0.2) 18%,
-                          rgba(0,0,0,0.65) 38%,
-                          rgba(0,0,0,0.95) 65%,
+                          rgba(0,0,0,0.15) 16%,
+                          rgba(0,0,0,0.6) 36%,
+                          rgba(0,0,0,0.92) 62%,
                           rgba(0,0,0,1) 100%);
     mask-image: linear-gradient(to right,
                   transparent 0%,
-                  rgba(0,0,0,0.2) 18%,
-                  rgba(0,0,0,0.65) 38%,
-                  rgba(0,0,0,0.95) 65%,
+                  rgba(0,0,0,0.15) 16%,
+                  rgba(0,0,0,0.6) 36%,
+                  rgba(0,0,0,0.92) 62%,
                   rgba(0,0,0,1) 100%);
   }
-  /* 建築頂端微光帶，讓建築輪廓與天空銜接更自然 */
+  /* 建築頂端薄霧光暈 — 朝陽穿過晨霧的感覺 */
   .hero-glow {
     position: absolute;
     bottom: 0; right: 0;
-    width: 65%;
-    height: 180px;
+    width: 68%;
+    height: 200px;
     background: linear-gradient(to bottom,
                   transparent 0%,
-                  rgba(255, 230, 195, 0.05) 50%,
-                  rgba(255, 220, 175, 0.1) 100%);
+                  rgba(255, 240, 210, 0.06) 40%,
+                  rgba(255, 225, 180, 0.12) 100%);
     pointer-events: none;
     z-index: 2;
   }
   /* 手機：縮小建築佔比避免擠壓 */
   @media (max-width: 760px) {
-    .hero-buildings { width: 100%; opacity: 0.28; }
+    .hero-buildings { width: 100%; opacity: 0.4; }
     .hero-glow { width: 100%; }
   }
   .brand-row {
@@ -181,7 +187,7 @@
     background: linear-gradient(135deg, #fff7e6 0%, #fef3c7 100%);
     border-radius: 16px;
     padding: 28px;
-    margin-top: -48px;
+    margin-top: 28px;        /* 從 -48px 改為正值，不再覆蓋 Hero 建築 */
     margin-bottom: 28px;
     position: relative;
     z-index: 2;
@@ -1016,7 +1022,7 @@
 
   @media (max-width: 640px) {
     header { padding: 28px 0 64px; }
-    .spotlight { padding: 20px; margin-top: -36px; }
+    .spotlight { padding: 20px; margin-top: 20px; }
     .filter-card { padding: 18px; }
     .course-card {
       grid-template-columns: 72px 1fr; padding: 16px; gap: 14px;
