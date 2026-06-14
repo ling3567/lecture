@@ -184,12 +184,21 @@
     border-color: #fff;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   }
+  /* 年度徽章：去除背景方塊，用淡色文字 + 細分隔線整合，視覺更乾淨 */
   .year-tab .pill {
-    background: rgba(0,0,0,0.08); color: inherit;
-    padding: 1px 8px; border-radius: 10px;
+    background: transparent;
+    color: rgba(255,255,255,0.75);
+    padding: 0 0 0 8px;
+    margin-left: 4px;
+    border-left: 1px solid rgba(255,255,255,0.3);
+    border-radius: 0;
     font-size: 11px; font-weight: 500;
+    letter-spacing: 0.3px;
   }
-  .year-tab.active .pill { background: var(--primary-light); color: var(--primary-dark); }
+  .year-tab.active .pill {
+    color: var(--primary);
+    border-left-color: rgba(10, 107, 124, 0.25);
+  }
   .year-tab.tba { opacity: 0.7; }
   .year-tab.past:not(.active) { opacity: 0.75; }
 
