@@ -43,16 +43,16 @@
   .container { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
 
   /* Header — 晨光天空漸層：上方青綠夜空 → 中段過渡 → 下方暖夕陽
-     模擬清晨日出的天空色階，建築正好位於暖色「地平線」上 */
+     padding-bottom 縮減為 16px，讓 Hero 整體精簡，建築貼齊年度 tab 底邊 */
   header {
     background: linear-gradient(180deg,
       #0d7d92 0%,        /* 天頂青綠 */
-      #1a8fa3 28%,
-      #4ba8b3 55%,
-      #d8a578 82%,       /* 地平線暖橘 */
+      #1a8fa3 30%,
+      #4ba8b3 60%,
+      #d8a578 90%,       /* 地平線暖橘 */
       #e8b889 100%);     /* 底部暖光 */
     color: #fff;
-    padding: 40px 0 130px;
+    padding: 40px 0 16px;
     position: relative;
     overflow: hidden;
   }
@@ -80,10 +80,10 @@
   .hero-buildings {
     position: absolute;
     bottom: 0; right: 0;
-    width: 64%;
-    max-width: 860px;
+    width: 56%;
+    max-width: 760px;
     height: auto;
-    max-height: 300px;
+    max-height: 200px;       /* 縮減後與年度 tab 底邊對齊 */
     object-fit: cover;
     object-position: bottom right;
     opacity: 0.78;            /* 提高 → 建築清晰，背景已是暖色不會搶戲 */
@@ -187,11 +187,11 @@
     background: linear-gradient(135deg, #fff7e6 0%, #fef3c7 100%);
     border-radius: 16px;
     padding: 28px;
-    margin-top: 28px;        /* 從 -48px 改為正值，不再覆蓋 Hero 建築 */
+    margin-top: -36px;       /* 恢復與 Hero 重疊的「浮卡」效果 */
     margin-bottom: 28px;
     position: relative;
-    z-index: 2;
-    box-shadow: 0 10px 40px rgba(217, 119, 87, 0.15);
+    z-index: 4;              /* 高於建築與光暈，確保不被擋 */
+    box-shadow: 0 10px 40px rgba(217, 119, 87, 0.2);
     border: 1px solid #fde68a;
   }
   .spotlight-head {
@@ -1022,7 +1022,7 @@
 
   @media (max-width: 640px) {
     header { padding: 28px 0 64px; }
-    .spotlight { padding: 20px; margin-top: 20px; }
+    .spotlight { padding: 20px; margin-top: -24px; }
     .filter-card { padding: 18px; }
     .course-card {
       grid-template-columns: 72px 1fr; padding: 16px; gap: 14px;
