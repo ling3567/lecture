@@ -43,101 +43,78 @@
   }
   .container { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
 
-  /* Header — 晨光天空漸層：上方青綠夜空 → 中段過渡 → 底部完全融入頁面背景 */
+  /* Hero：奇美醫院晨光全景，左側覆蓋品牌色以維持文字辨識度 */
   header {
-    background: linear-gradient(180deg,
-      #0d7d92 0%,        /* 天頂青綠 */
-      #1a8fa3 28%,
-      #4ba8b3 55%,
-      #d8a578 80%,       /* 地平線暖橘 */
-      #fdf6f1 100%);     /* 底部 = 頁面背景色 #fdf6f1，徹底消除邊線 */
+    background-color: #087d96;
+    background-image: url("hero-cmh.png");
+    background-position: center bottom;
+    background-size: cover;
+    background-repeat: no-repeat;
     color: #fff;
     padding: 40px 0 70px;
     position: relative;
     overflow: hidden;
   }
-  /* 底部與頁面背景無縫銜接 (cream → cream，看不到邊界) */
+  /* 左側深青遮罩保護標題；右側漸退，保留建築與晨光原色 */
+  header::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg,
+      rgba(4, 70, 88, 0.92) 0%,
+      rgba(4, 85, 104, 0.82) 28%,
+      rgba(4, 91, 109, 0.48) 48%,
+      rgba(4, 91, 109, 0.10) 68%,
+      transparent 82%);
+    pointer-events: none;
+    z-index: 1;
+  }
+  /* 底部淡化到頁面底色，保留 Spotlight 浮卡重疊感 */
   header > .hero-bottom-fade {
     position: absolute;
     bottom: 0; left: 0; right: 0;
-    height: 40px;
+    height: 26px;
     background: linear-gradient(to bottom,
-                  transparent 0%,
-                  #fdf6f1 100%);
-    pointer-events: none; z-index: 3;
-  }
-  /* 右下太陽光暈 — 強化「晨光照亮建築」的方向感 */
-  header::before {
-    content: ""; position: absolute;
-    top: 0; right: 0; bottom: 0; width: 70%;
-    background:
-      radial-gradient(ellipse 60% 80% at 75% 95%,
-        rgba(255, 230, 180, 0.42) 0%,
-        rgba(255, 210, 150, 0.18) 35%,
-        transparent 70%);
-    pointer-events: none; z-index: 0;
-  }
-  /* 左上微微星辰高光 (取代原來左下橘) */
-  header::after {
-    content: ""; position: absolute; top: -50px; left: -50px;
-    width: 320px; height: 320px;
-    background: radial-gradient(circle, rgba(255,255,255,0.07) 0%, transparent 65%);
-    border-radius: 50%; z-index: 0;
-  }
-  .header-content { position: relative; z-index: 3; }
-
-  /* 奇美醫院建築 - 右側建築群，使用「漸進式」mask 避免可見邊線 */
-  .hero-buildings {
-    position: absolute;
-    bottom: 34px;           /* 底邊貼齊 Spotlight 上緣 */
-    right: 0;
-    width: 56%;
-    max-width: 760px;
-    height: auto;
-    max-height: 260px;
-    object-fit: cover;
-    object-position: bottom right;
-    opacity: 0.65;          /* 降低 → 邊界更柔和 */
-    pointer-events: none;
-    z-index: 1;
-    filter: brightness(1.08) saturate(0.88) contrast(0.98) sepia(0.05);
-    /* 用 8 段超平滑漸層，每段差距僅 0.05~0.15，避免「視覺邊線」 */
-    -webkit-mask-image: linear-gradient(to right,
-                          rgba(0,0,0,0) 0%,
-                          rgba(0,0,0,0) 18%,
-                          rgba(0,0,0,0.05) 30%,
-                          rgba(0,0,0,0.15) 42%,
-                          rgba(0,0,0,0.35) 55%,
-                          rgba(0,0,0,0.6) 70%,
-                          rgba(0,0,0,0.85) 85%,
-                          rgba(0,0,0,1) 100%);
-    mask-image: linear-gradient(to right,
-                  rgba(0,0,0,0) 0%,
-                  rgba(0,0,0,0) 18%,
-                  rgba(0,0,0,0.05) 30%,
-                  rgba(0,0,0,0.15) 42%,
-                  rgba(0,0,0,0.35) 55%,
-                  rgba(0,0,0,0.6) 70%,
-                  rgba(0,0,0,0.85) 85%,
-                  rgba(0,0,0,1) 100%);
-  }
-  /* 建築頂端薄霧光暈 — 朝陽穿過晨霧的感覺 */
-  .hero-glow {
-    position: absolute;
-    bottom: 0; right: 0;
-    width: 68%;
-    height: 200px;
-    background: linear-gradient(to bottom,
-                  transparent 0%,
-                  rgba(255, 240, 210, 0.06) 40%,
-                  rgba(255, 225, 180, 0.12) 100%);
+      transparent 0%,
+      rgba(253, 246, 241, 0.82) 100%);
     pointer-events: none;
     z-index: 2;
   }
-  /* 手機：縮小建築佔比避免擠壓 */
+  /* 沒有 Spotlight 時，以較長的米白漸層收掉照片底部與樹叢。 */
+  header.no-spotlight > .hero-bottom-fade {
+    height: 112px;
+    background: linear-gradient(to bottom,
+      transparent 0%,
+      rgba(253, 246, 241, 0.20) 24%,
+      rgba(253, 246, 241, 0.78) 58%,
+      #fdf6f1 88%,
+      #fdf6f1 100%);
+  }
+  /* 輕微暗角增加畫面深度，不影響建築細節 */
+  header::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg,
+      rgba(0, 54, 73, 0.10) 0%,
+      transparent 45%,
+      rgba(255, 244, 225, 0.06) 100%);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .header-content { position: relative; z-index: 3; }
+
+  /* 手機將焦點稍向右移，避免左側文字落在建築上 */
   @media (max-width: 760px) {
-    .hero-buildings { width: 100%; opacity: 0.4; }
-    .hero-glow { width: 100%; }
+    header {
+      background-position: 64% bottom;
+    }
+    header::before {
+      background: linear-gradient(90deg,
+        rgba(4, 70, 88, 0.94) 0%,
+        rgba(4, 85, 104, 0.82) 58%,
+        rgba(4, 91, 109, 0.34) 100%);
+    }
   }
   .brand-row {
     display: flex; align-items: center; gap: 14px;
@@ -1072,8 +1049,6 @@
 </div>
 
 <header>
-  <img class="hero-buildings" src="buliding_cmh.png" alt="" aria-hidden="true" />
-  <div class="hero-glow"></div>
   <div class="hero-bottom-fade"></div>
   <div class="container header-content">
     <div class="brand-row">
@@ -1711,9 +1686,13 @@ function relativeLabel(days) {
 function renderSpotlight() {
   const yr = SCHEDULE[currentYear];
   const spotlight = $("spotlight");
+  const setSpotlightVisible = visible => {
+    spotlight.style.display = visible ? "block" : "none";
+    document.querySelector("header").classList.toggle("no-spotlight", !visible);
+  };
 
   // 過去的年度（adYear < 今年）不顯示
-  if (yr.adYear < TODAY_AD_YEAR) { spotlight.style.display = "none"; return; }
+  if (yr.adYear < TODAY_AD_YEAR) { setSpotlightVisible(false); return; }
 
   // 從今天起的有效課程（排除取消/休假/待公告，並自動排除國定假日當天）
   const upcoming = yr.courses
@@ -1726,10 +1705,10 @@ function renderSpotlight() {
   const cardsEl = $("spotlight-cards");
   if (upcoming.length === 0) {
     // 未來年度且尚無公開課程 → 隱藏 spotlight (placeholder 會提示「尚未公告」)
-    if (yr.adYear > TODAY_AD_YEAR) { spotlight.style.display = "none"; return; }
+    if (yr.adYear > TODAY_AD_YEAR) { setSpotlightVisible(false); return; }
     $("spotlight-meta").innerHTML = `近 ${SPOTLIGHT_DAYS} 天內無排定課程`;
     cardsEl.innerHTML = '<div class="spotlight-empty">本年度即將到來的演講已全部結束，或下一場仍在規劃中。</div>';
-    spotlight.style.display = "block";
+    setSpotlightVisible(true);
     return;
   }
 
@@ -1782,7 +1761,7 @@ function renderSpotlight() {
     });
   });
 
-  spotlight.style.display = "block";
+  setSpotlightVisible(true);
 }
 
 /* =========================================================
